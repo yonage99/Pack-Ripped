@@ -825,6 +825,10 @@
       pack.onclick = null;
       pack.classList.add('ripping');
       if (window.PRSound) window.PRSound.shake(); // coins rattling as the pack tears
+      if (window.PRFx) {
+        window.PRFx.flash();
+        window.PRFx.burstFrom(pack, { count: type === 'collector' ? 220 : 150, power: type === 'collector' ? 16 : 13 });
+      }
       if (navigator.vibrate) navigator.vibrate(30);
       await sleep(650);
       if (ripBlind && ripDone) {
@@ -877,7 +881,9 @@
       requestAnimationFrame(() =>
         setTimeout(() => {
           flip.classList.add('flipped');
-          if (window.PRSound) window.PRSound.forCard(p.card, cardPrice(p.card, p.foil)); // ka-ching / dings for good cards
+          const tierHit = window.PRSound ? window.PRSound.forCard(p.card, cardPrice(p.card, p.foil)) : ''; // coins / ka-ching / dings
+          if (window.PRFx && tierHit === 'huge') window.PRFx.goldShower();
+          else if (window.PRFx && tierHit === 'big') window.PRFx.burstFrom(flip, { count: 60, colors: ['#ffd84d', '#ffb347', '#ffffff'], power: 10 });
           if (big && navigator.vibrate) navigator.vibrate(p.card.rarity === 'mythic' ? [40, 60, 80] : 40);
           setTimeout(() => (wrap.querySelector('.pull-info').style.visibility = 'visible'), 300);
         }, big ? 450 : 60)

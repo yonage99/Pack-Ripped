@@ -74,6 +74,30 @@
     src.start(t);
   }
 
+  /** A soft bell: pure tone with a gentle attack and a long, smooth fade. */
+  function bell(a, t, freq, dur, vol) {
+    const o = a.createOscillator();
+    const o2 = a.createOscillator();
+    const g = a.createGain();
+    const g2 = a.createGain();
+    o.type = 'sine';
+    o2.type = 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    o2.frequency.setValueAtTime(freq * 2, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g2.gain.setValueAtTime(0.0001, t);
+    g2.gain.exponentialRampToValueAtTime(vol * 0.15, t + 0.02);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.5);
+    o.connect(g).connect(a.destination);
+    o2.connect(g2).connect(a.destination);
+    o.start(t);
+    o2.start(t);
+    o.stop(t + dur + 0.05);
+    o2.stop(t + dur + 0.05);
+  }
+
   /** A coin clink: two inharmonic partials, like thin metal. */
   function clink(a, t, base, vol) {
     tone(a, t, base, 0.12, vol, 'triangle');
@@ -120,15 +144,11 @@
       const a = audio();
       if (!a) return;
       const t0 = a.currentTime + 0.02;
-      const notes = [1046.5, 1318.5, 1568, 2093, 2637]; // C6 E6 G6 C7 E7
-      notes.forEach((f, i) => {
-        const t = t0 + i * 0.16;
-        tone(a, t, f, 0.9, 0.2, 'sine');
-        tone(a, t, f * 2, 0.6, 0.07, 'sine');
-        tone(a, t, f * 3.01, 0.35, 0.03, 'sine');
+      // Ding, ding, ding: three soft bells (G5, C6, E6), gentle start, long fade.
+      [784, 1046.5, 1318.5].forEach((f, i) => {
+        const t = t0 + i * 0.22;
+        bell(a, t, f, 1.1, 0.13);
       });
-      // Shimmer at the end
-      for (let i = 0; i < 6; i++) clink(a, t0 + 0.85 + i * 0.05, 3200 + i * 300, 0.06);
     },
 
     /**

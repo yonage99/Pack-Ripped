@@ -121,12 +121,14 @@
           const bag = document.getElementById('sqBag');
           bag.classList.add('opening');
           if (window.PRSound) window.PRSound.shake();
+          if (window.PRFx) window.PRFx.burstFrom(bag, { count: 120 });
           if (navigator.vibrate) navigator.vibrate(item.rarity === 'super' ? [40, 60, 80] : 25);
           setTimeout(() => {
             bag.remove();
             document.getElementById('sqHint').remove();
             document.getElementById('sqReveal').classList.remove('hidden');
-            if (window.PRSound) window.PRSound.forCard(card, 0);
+            const hit = window.PRSound ? window.PRSound.forCard(card, 0) : '';
+            if (window.PRFx && hit === 'huge') window.PRFx.goldShower();
           }, 550);
         };
         document.getElementById('sqDone').onclick = () => {

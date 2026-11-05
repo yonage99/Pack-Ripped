@@ -496,3 +496,8 @@ small.block { display: block; font-weight: 500; font-size: 12px; margin-top: 2px
 .bag.opening { animation: none; transform: scale(1.25); opacity: 0; transition: all 0.5s; }
 
 .sound-btn { margin-left: auto; margin-right: 8px; background: var(--panel2); border: 0; border-radius: 99px; width: 40px; height: 40px; font-size: 18px; }
+
+/* Effects */
+.fx-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 200; }
+.fx-flash { position: fixed; inset: 0; pointer-events: none; z-index: 190; background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.85), rgba(255, 200, 120, 0.35) 45%, transparent 75%); animation: fxflash 0.55s ease-out forwards; }
+@keyframes fxflash { from { opacity: 1; } to { opacity: 0; } }
