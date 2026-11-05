@@ -501,3 +501,16 @@ small.block { display: block; font-weight: 500; font-size: 12px; margin-top: 2px
 .fx-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 200; }
 .fx-flash { position: fixed; inset: 0; pointer-events: none; z-index: 190; background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.85), rgba(255, 200, 120, 0.35) 45%, transparent 75%); animation: fxflash 0.55s ease-out forwards; }
 @keyframes fxflash { from { opacity: 1; } to { opacity: 0; } }
+
+/* RMS spinner wheel */
+.spinner-wrap { position: relative; width: 220px; height: 236px; margin: 6px auto; cursor: pointer; }
+.spin-pointer { position: absolute; top: -4px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 26px; z-index: 2; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); }
+.wheel {
+  position: absolute; top: 16px; left: 0; width: 220px; height: 220px; border-radius: 50%;
+  border: 6px solid #fff; box-shadow: 0 10px 40px rgba(255, 158, 203, 0.4);
+  background: conic-gradient(#ff9ecb 0 45deg, #ffd84d 45deg 90deg, #8de0b8 90deg 135deg, #8fd0ff 135deg 180deg,
+    #c9a7ff 180deg 225deg, #ffb27a 225deg 270deg, #a0f0f0 270deg 315deg, #ff8fa3 315deg 360deg);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 1.8s cubic-bezier(0.12, 0.8, 0.15, 1);
+}
+.wheel span { background: #1b1430; color: #fff; font-weight: 900; border-radius: 50%; width: 74px; height: 74px; display: flex; align-items: center; justify-content: center; font-size: 18px; }

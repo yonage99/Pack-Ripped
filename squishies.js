@@ -14,13 +14,53 @@
   const root = () => document.getElementById('squishRoot');
   let editing = null; // brand id being edited
 
+  /*
+   * Starter lists from what's out there (Nov 2026): RMS USA's Mystery Dumpling blind
+   * boxes (Five Below), and Schylling's NeeDoh line. Product names come from RMS press
+   * releases, Target/Walmart listings and resale listings. The rarities are this app's,
+   * based on what collectors hunt for and resell high, not official odds.
+   */
+  const CATALOG = [
+    {
+      name: 'RMS Mystery Dumpling', match: ['rms'], style: 'spinner',
+      items: [
+        ['Sherbet Dumpling', 'common'], ['Neon Dumpling', 'common'], ['Shark Dumpling', 'common'],
+        ['Seashell Dumpling', 'common'], ['Sunset Dumpling', 'common'], ['Party Confetti Dumpling', 'common'],
+        ['Stuffed Bun Dumpling', 'common'], ['Water-Filled Dumpling', 'common'],
+        ['Color Changing Dumpling', 'rare'], ['Galaxy Dumpling', 'rare'], ['Starlight Dumpling', 'rare'],
+        ['Spooky Ghost Dumpling', 'rare'], ['Green Holographic Dumpling', 'rare'], ['Purple Holographic Dumpling', 'rare'],
+        ['Ultra-Rare Glitter Dumpling', 'super'], ['Golden Ticket Dumpling', 'super'],
+      ].map(([n, r]) => [n, r, 'dumpling']),
+    },
+    {
+      name: 'NeeDoh', match: ['nee-doh', 'needoh', 'nee doh'], style: 'bag',
+      items: [
+        ['The Groovy Glob', 'common', 'ball'], ['Gumdrop', 'common', 'drop'], ['Nice Cube', 'common', 'cube'],
+        ['Snowball Crunch', 'common', 'ball'], ['Teenie NeeDoh', 'common', 'ball'], ['Dohnut', 'common', 'donut'],
+        ['Groovy Fruit', 'common', 'drop'],
+        ['Nice Cube Swirl', 'rare', 'cube'], ['Nice Cube Glitter & Glow', 'rare', 'cube'], ['Jellyfish', 'rare', 'drop'],
+        ['Fuzzball', 'rare', 'ball'], ['Dream Drop', 'rare', 'drop'], ['Teenie Cool Cats', 'rare', 'ball'],
+        ['Nice Ice Baby', 'rare', 'cube'], ['Nice Sicle', 'rare', 'drop'],
+        ['Nice Berg', 'super', 'cube'], ['Atomic NeeDoh', 'super', 'ball'],
+      ],
+    },
+  ];
+
   function data() {
     const s = PR.state;
     if (!s.squish) s.squish = { bagCost: 50, brands: [] };
-    if (!s.squish.seeded) {
-      // Starting brands; add the items you collect.
-      for (const name of ['Nee-Doh', 'RMS'])
-        if (!s.squish.brands.some((b) => b.name.toLowerCase() === name.toLowerCase())) s.squish.brands.push({ id: uid(), name, items: [] });
+    if (!s.squish.catalogV1) {
+      for (const c of CATALOG) {
+        let b = s.squish.brands.find((x) => c.match.some((m) => x.name.toLowerCase().replace(/[^a-z ]/g, '').startsWith(m.replace(/[^a-z ]/g, ''))));
+        if (!b) s.squish.brands.push((b = { id: uid(), name: c.name, items: [] }));
+        b.name = c.name;
+        b.style = c.style;
+        for (const [name, rarity, shape] of c.items)
+          if (!b.items.some((i) => i.name.toLowerCase() === name.toLowerCase())) b.items.push({ id: uid(), name, rarity, shape });
+      }
+      // RMS first, then NeeDoh, then anything you added.
+      s.squish.brands.sort((a, b) => (CATALOG.findIndex((c) => c.name === a.name) + 1 || 99) - (CATALOG.findIndex((c) => c.name === b.name) + 1 || 99));
+      s.squish.catalogV1 = true;
       s.squish.seeded = true;
     }
     return s.squish;
@@ -28,19 +68,32 @@
   const uid = () => Math.random().toString(36).slice(2, 9);
 
   // A simple, original squishy tile (not brand art), colored from the item's name.
-  function tile(name, rarity) {
+  const SHAPES = {
+    blob: 'M44 200 C40 120 80 80 122 80 C164 80 204 120 200 200 C198 250 160 268 122 268 C84 268 46 250 44 200 Z',
+    ball: 'M122 76 C178 76 206 122 206 172 C206 228 170 268 122 268 C74 268 38 228 38 172 C38 122 66 76 122 76 Z',
+    cube: 'M58 96 Q50 96 50 104 L50 252 Q50 262 60 262 L184 262 Q194 262 194 252 L194 104 Q194 96 186 96 Z',
+    drop: 'M122 70 C150 110 196 150 196 200 C196 244 162 268 122 268 C82 268 48 244 48 200 C48 150 94 110 122 70 Z',
+    donut: 'M122 96 C176 96 210 132 210 182 C210 232 176 262 122 262 C68 262 34 232 34 182 C34 132 68 96 122 96 Z M122 160 C108 160 102 170 102 180 C102 192 110 200 122 200 C134 200 142 192 142 180 C142 170 136 160 122 160 Z',
+    dumpling: 'M30 220 C30 150 70 104 122 104 C174 104 214 150 214 220 C214 246 186 262 122 262 C58 262 30 246 30 220 Z',
+  };
+
+  function tile(name, rarity, shape) {
     let h = 0;
     for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-    const hue = h % 360;
+    const hue = /gold/i.test(name) ? 46 : h % 360;
     const body = `hsl(${hue},70%,72%)`;
     const shade = `hsl(${hue},60%,58%)`;
     const bg = rarity === 'super' ? '#2a1d55' : rarity === 'rare' ? '#1d2f55' : '#241f38';
     const sparkle = rarity === 'super' ? '<text x="40" y="70" font-size="30">✨</text><text x="180" y="120" font-size="22">✨</text>' : rarity === 'rare' ? '<text x="185" y="80" font-size="24">✨</text>' : '';
-    const words = name.length > 18 ? name.slice(0, 17) + '…' : name;
+    const label = name.replace(/ Dumpling$/, '');
+    const words = label.length > 18 ? label.slice(0, 17) + '…' : label;
+    const path = SHAPES[shape] || SHAPES.blob;
+    // Dumplings get pleats on top; cubes sit a bit lower in the face.
+    const pleats = shape === 'dumpling' ? '<path d="M82 116 Q92 140 86 160 M122 104 Q126 132 122 156 M162 116 Q152 140 158 160" stroke="rgba(255,255,255,.55)" stroke-width="5" fill="none" stroke-linecap="round"/>' : '';
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 244 340">
       <rect width="244" height="340" rx="16" fill="${bg}"/>
       <ellipse cx="122" cy="270" rx="78" ry="12" fill="rgba(0,0,0,.35)"/>
-      <path d="M44 200 C40 120 80 80 122 80 C164 80 204 120 200 200 C198 250 160 268 122 268 C84 268 46 250 44 200 Z" fill="${body}" stroke="${shade}" stroke-width="6"/>
+      <path d="${path}" fill="${body}" stroke="${shade}" stroke-width="6" fill-rule="evenodd"/>${pleats}
       <ellipse cx="96" cy="128" rx="18" ry="10" fill="rgba(255,255,255,.55)"/>
       <circle cx="98" cy="190" r="8" fill="#2a2140"/><circle cx="146" cy="190" r="8" fill="#2a2140"/>
       <path d="M110 210 Q122 222 134 210" stroke="#2a2140" stroke-width="5" fill="none" stroke-linecap="round"/>
@@ -62,7 +115,7 @@
       rarity: APP_RARITY[item.rarity] || 'common',
       rarityLabel: LABEL[item.rarity] || 'Common',
       type: `${brand.name} squishy`,
-      img: tile(item.name, item.rarity),
+      img: tile(item.name, item.rarity, item.shape),
       usd: 0,
       usdFoil: 0,
       basic: false,
@@ -108,8 +161,13 @@
     PR.save();
     PR.renderPoints(true);
     dialog(
-      `<div class="bag" id="sqBag"><div class="bag-top"></div><div class="bag-body"><span>?</span><b>${esc(brand.name)}</b><small>Blind bag</small></div></div>
-      <p class="hint" id="sqHint">Tap the bag to open it</p>
+      `${
+        brand.style === 'spinner'
+          ? `<div class="spinner-wrap" id="sqBag"><div class="spin-pointer">▼</div><div class="wheel" id="sqWheel"><span>${esc(brand.name.split(' ')[0])}</span></div></div>
+      <p class="hint" id="sqHint">Tap the wheel to spin</p>`
+          : `<div class="bag" id="sqBag"><div class="bag-top"></div><div class="bag-body"><span>?</span><b>${esc(brand.name)}</b><small>Blind bag</small></div></div>
+      <p class="hint" id="sqHint">Tap the bag to open it</p>`
+      }
       <div id="sqReveal" class="hidden">
         <div class="mini squish-big ${card.rarity}"><img src="${card.img}" alt="${esc(card.name)}"></div>
         <h3>${esc(card.name)} ${isNew ? '<span class="new-tag">NEW</span>' : ''}</h3>
@@ -119,6 +177,7 @@
       (close) => {
         document.getElementById('sqBag').onclick = () => {
           const bag = document.getElementById('sqBag');
+          if (brand.style === 'spinner') return spin(bag);
           bag.classList.add('opening');
           if (window.PRSound) window.PRSound.shake();
           if (window.PRFx) window.PRFx.burstFrom(bag, { count: 120 });
@@ -130,6 +189,31 @@
             const hit = window.PRSound ? window.PRSound.forCard(card, 0) : '';
             if (window.PRFx && hit === 'huge') window.PRFx.goldShower();
           }, 550);
+        };
+        const reveal = () => {
+          document.getElementById('sqHint').remove();
+          document.getElementById('sqReveal').classList.remove('hidden');
+          const hit = window.PRSound ? window.PRSound.forCard(card, 0) : '';
+          if (window.PRFx && hit === 'huge') window.PRFx.goldShower();
+        };
+        // Spinner: spin the wheel a few turns, tick as it goes, then burst and reveal.
+        const spin = (wrap) => {
+          if (wrap.dataset.spun) return;
+          wrap.dataset.spun = 1;
+          const wheel = document.getElementById('sqWheel');
+          const turns = 4 + Math.random() * 2;
+          wheel.style.transform = `rotate(${turns * 360}deg)`;
+          if (window.PRSound) {
+            window.PRSound.wake();
+            for (let k = 0; k < 9; k++) setTimeout(() => window.PRSound.drop(1), k * k * 22);
+          }
+          setTimeout(() => {
+            if (window.PRSound) window.PRSound.shake();
+            if (window.PRFx) window.PRFx.burstFrom(wrap, { count: 140 });
+            if (navigator.vibrate) navigator.vibrate(item.rarity === 'super' ? [40, 60, 80] : 25);
+            wrap.remove();
+            reveal();
+          }, 1900);
         };
         document.getElementById('sqDone').onclick = () => {
           close();
@@ -151,7 +235,7 @@
     el.innerHTML = `
       <div class="card-panel">
         <h2>Squishies</h2>
-        <p class="muted small">Real brands, names only: add the brands and items you collect, then open blind bags with your ◆. Each bag gives a random item from that brand: common 70%, rare 25%, super rare 5%. The pictures are simple stand-ins, not official photos.</p>
+        <p class="muted small">Real products, names only. RMS Mystery Dumplings and NeeDoh come preloaded with popular editions; tap Edit to add or change items, or add your own brands. Each spin or bag gives a random item: common 70%, rare 25%, super rare 5%. Rarities are based on what collectors hunt for, not official odds, and the pictures are simple stand-ins, not official photos.</p>
       </div>
       ${d.brands
         .map((b) => {
@@ -176,10 +260,10 @@
                   <div class="row"><button class="btn" data-a="rename">Rename brand</button><button class="btn danger" data-a="remove">Delete brand</button></div>`
                 : `<div class="sq-strip">${b.items
                     .slice(0, 8)
-                    .map((i) => `<img src="${tile(i.name, i.rarity)}" alt="${esc(i.name)}" class="${PR.state.collection[`sq:${b.id}:${i.id}`] ? '' : 'unowned'}">`)
+                    .map((i) => `<img src="${tile(i.name, i.rarity, i.shape)}" alt="${esc(i.name)}" class="${PR.state.collection[`sq:${b.id}:${i.id}`] ? '' : 'unowned'}">`)
                     .join('')}</div>
                   <button class="btn primary wide" data-a="open" ${b.items.length && PR.state.points >= d.bagCost ? '' : 'disabled'}>${
-                    b.items.length ? `Open a blind bag (${d.bagCost} ◆)` : 'Tap Edit to add items'
+                    b.items.length ? `${b.style === 'spinner' ? '🎡 Spin the wheel' : 'Open a blind bag'} (${d.bagCost} ◆)` : 'Tap Edit to add items'
                   }</button>`
             }
           </div>`;
