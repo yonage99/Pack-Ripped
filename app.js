@@ -57,11 +57,12 @@
   });
 
   // Saves from before the rate changed used 100 steps per point. Switch them to 10.
-  // Steps already paid out today stay paid; new steps earn at the new rate.
+  // steps.credited counts points already paid for today's steps, so keeping it as-is
+  // back-pays today's steps at the new rate (minus what was already paid) on next load.
   function migrate(s) {
     if (s.stepsPerPoint === 100) {
       s.stepsPerPoint = 10;
-      if (s.steps) s.steps.credited = (s.steps.credited || 0) * 10;
+      s.rateBackpay = true;
     }
     return s;
   }
@@ -890,6 +891,12 @@
   };
 
   renderPoints();
+  if (state.rateBackpay) {
+    delete state.rateBackpay;
+    const paid = creditSteps();
+    save();
+    if (paid > 0) setTimeout(() => toast(`+${paid} ◆: today's steps re-counted at the new rate (10 steps = 1 ◆)`), 500);
+  }
   renderEarn();
   if (!lsGet(STORE_KEY)) {
     save();
