@@ -124,6 +124,7 @@
     if (v === 'earn') renderEarn();
     if (v === 'decks') window.PRDecks && window.PRDecks.render();
     if (v === 'friends') window.PRSocial && window.PRSocial.render();
+    if (v === 'packwars') window.PRPackWars && window.PRPackWars.render();
     window.scrollTo(0, 0);
   }
 
@@ -546,10 +547,12 @@
   }
 
   let ripping = false;
-  async function ripPack(set, type) {
+  let ripDone = null; // set when another feature (Pack Wars) wants the pulled cards back
+  async function ripPack(set, type, onDone) {
     const cost = costFor(type);
     if (ripping || state.points < cost) return;
     ripping = true;
+    ripDone = onDone || null;
     const ov = $('#packOverlay');
     const stage = $('#packStage');
     ov.classList.remove('hidden');
@@ -566,7 +569,12 @@
     if (!pool) {
       stage.innerHTML = `<div class="loading"><p>Couldn't load cards for this set. Check your connection and try again, or pick another set.</p>
         <button class="btn" id="closeErr">Close</button></div>`;
-      $('#closeErr').onclick = () => ov.classList.add('hidden');
+      $('#closeErr').onclick = () => {
+        ov.classList.add('hidden');
+        const cb = ripDone;
+        ripDone = null;
+        if (cb) cb(null);
+      };
       ripping = false;
       return;
     }
@@ -720,14 +728,28 @@
             .join('')}
         </div>
         <p class="muted small">All ${pulls.length} cards were added to your collection.</p>
-        <div class="row center">
+        ${
+          ripDone
+            ? '<div class="row center"><button class="btn primary" id="sumContinue">Build my Pack Wars deck →</button></div>'
+            : `<div class="row center">
           <button class="btn" id="sumDone">Done</button>
           <button class="btn primary" id="sumAgain" ${state.points >= cost ? '' : 'disabled'}>
             ${state.points >= cost ? `Rip another (${cost} ◆)` : `Need ${cost - state.points} ◆`}
           </button>
-        </div>
+        </div>`
+        }
       </div>`;
     stage.querySelectorAll('.mini').forEach((m) => (m.onclick = () => showCard(m.dataset.id)));
+    if (ripDone) {
+      $('#sumContinue').onclick = () => {
+        $('#packOverlay').classList.add('hidden');
+        ripping = false;
+        const cb = ripDone;
+        ripDone = null;
+        cb(pulls);
+      };
+      return;
+    }
     $('#sumDone').onclick = () => {
       $('#packOverlay').classList.add('hidden');
       ripping = false;
@@ -909,6 +931,11 @@
   window.PR = {
     get state() { return state; },
     save, scry, esc, toast, dialog, cardPrice, showCard, cap, money, slimCard, API, showView,
+    ripPack, costFor, renderPoints,
+    getSets: async () => {
+      if (!sets) await loadSets();
+      return sets || [];
+    },
   };
 
   renderPoints();

@@ -1,6 +1,6 @@
 // Offline support: cache the app shell. Card data and images always come from the network.
-const CACHE = 'packripped-v9';
-const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'odds.js', 'commander.js', 'decks.js', 'config.js', 'social.js', 'vendor/supabase-2.119.0.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png'];
+const CACHE = 'packripped-v10';
+const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'odds.js', 'commander.js', 'decks.js', 'config.js', 'social.js', 'packwars-engine.js', 'packwars.js', 'vendor/supabase-2.119.0.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

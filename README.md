@@ -27,6 +27,11 @@ added to your collection.
   [SETUP-FRIENDS.md](SETUP-FRIENDS.md)): sign up with a username, add friends,
   browse each other's collections and decks, and compete on steps today, this
   week, or all time.
+- **Pack Wars**: each player rips a fresh pack, adds basic lands (30-card deck)
+  and battles on a shared virtual table: draw, play, tap, counters, graveyard,
+  exile, life, turns and a game log. Play online against a friend (needs the
+  Friends server) or with two players on one phone. Rules aren't enforced; you
+  play like you would at a real table.
 - **Collection** with copies, foils, market prices, filters, and pack history.
 - Installable on your phone's home screen. Backup and restore by copy/paste.
 

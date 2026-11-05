@@ -637,5 +637,8 @@
   // Sign the user back in quietly on startup so syncing starts right away.
   if (configured) loadMe();
 
-  window.PRSocial = { render, syncNow };
+  window.PRSocial = {
+    render, syncNow, rpc, configured,
+    get me() { return me; },
+  };
 })();

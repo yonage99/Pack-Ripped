@@ -1,7 +1,7 @@
 # Turning on Friends & the leaderboard
 
-Friends, shared collections and decks, and the steps leaderboard need a small
-online database. This uses **Supabase**, which is free for an app this size. It
+Friends, shared collections and decks, the steps leaderboard and online Pack
+Wars need a small online database. This uses **Supabase**, which is free for an app this size. It
 takes about 5 minutes, and you can do it all from a phone browser.
 
 You only do this once. Everyone else just creates an account in the app.
