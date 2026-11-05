@@ -613,12 +613,15 @@
   let ripping = false;
   let ripDone = null; // set when another feature (Pack Wars) wants the pulled cards back
   let ripBlind = false; // Pack Wars: rip it, but don't look at the cards
+  let ripRandomPack = false; // the 50-point random pack
+  const RANDOM_COST = 50;
   async function ripPack(set, type, onDone, opts) {
-    const cost = costFor(type);
+    const cost = opts && opts.cost != null ? opts.cost : costFor(type);
     if (ripping || state.points < cost) return;
     ripping = true;
     ripDone = onDone || null;
     ripBlind = !!(opts && opts.blind);
+    ripRandomPack = !!(opts && opts.random);
     const ov = $('#packOverlay');
     const stage = $('#packStage');
     ov.classList.remove('hidden');
@@ -631,6 +634,11 @@
       }, type === 'collector');
     } catch (e) {
       pool = null;
+    }
+    if (!pool && ripRandomPack && (opts.tries || 0) < 4) {
+      // That set couldn't be loaded; quietly pick another random one.
+      ripping = false;
+      return ripRandom((opts.tries || 0) + 1);
     }
     if (!pool) {
       stage.innerHTML = `<div class="loading"><p>Couldn't load cards for this set. Check your connection and try again, or pick another set.</p>
@@ -690,7 +698,7 @@
         <div class="pack-body">
           <img src="${esc(set.icon)}" alt="">
           <div class="pack-name">${esc(set.name)}</div>
-          <div class="pack-type">${ODDS[type].name}</div>
+          <div class="pack-type">${ripRandomPack ? '🎲 Random pack · ' : ''}${ODDS[type].name}</div>
         </div>
       </div>
       <p class="hint">${ripBlind ? 'Tap to rip it open. No peeking: the cards go straight into your deck, face down.' : 'Tap the pack to rip it open'}</p>`;
@@ -779,7 +787,8 @@
   }
 
   function showSummary(set, pulls, value, type) {
-    const cost = costFor(type);
+    const random = ripRandomPack;
+    const cost = random ? RANDOM_COST : costFor(type);
     const stage = $('#packStage');
     const best = bestPull(pulls);
     const sorted = pulls.slice().sort(
@@ -807,7 +816,7 @@
             : `<div class="row center">
           <button class="btn" id="sumDone">Done</button>
           <button class="btn primary" id="sumAgain" ${state.points >= cost ? '' : 'disabled'}>
-            ${state.points >= cost ? `Rip another (${cost} ◆)` : `Need ${cost - state.points} ◆`}
+            ${state.points >= cost ? `${random ? 'Another random pack' : 'Rip another'} (${cost} ◆)` : `Need ${cost - state.points} ◆`}
           </button>
         </div>`
         }
@@ -830,9 +839,20 @@
     };
     $('#sumAgain').onclick = () => {
       ripping = false;
-      ripPack(set, type);
+      if (random) ripRandom();
+      else ripPack(set, type);
     };
   }
+
+  /** 🎲 A regular pack from a random set, for 50 points. */
+  async function ripRandom(tries) {
+    if (state.points < RANDOM_COST) return toast(`You need ${RANDOM_COST} ◆ for a random pack`);
+    if (!sets) await loadSets();
+    if (!sets || !sets.length) return toast("Couldn't load the set list. Check your connection.");
+    const set = sets[Math.floor(Math.random() * sets.length)];
+    ripPack(set, boosterTypeFor(set.released), null, { cost: RANDOM_COST, random: true, tries: tries || 0 });
+  }
+  $('#openRandom').addEventListener('click', () => ripRandom());
 
   const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : '');
 

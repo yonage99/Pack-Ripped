@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
   <header class="topbar">
@@ -66,11 +66,16 @@
         <button class="btn wide" id="checkinBtn">Claim daily bonus</button>
         <p class="muted small" id="streakText"></p>
       </div>
-      <p class="muted small center-text">Pack Ripped · version 14</p>
+      <p class="muted small center-text">Pack Ripped · version 15</p>
     </section>
 
     <!-- OPEN -->
     <section id="view-open" class="view">
+      <button class="pw-entry random-entry" id="openRandom">
+        <span class="pw-entry-icon">🎲</span>
+        <span><b>Random pack · 50 ◆</b><small>A regular pack from a surprise set</small></span>
+        <span class="chev">›</span>
+      </button>
       <button class="pw-entry" id="openPackWars">
         <span class="pw-entry-icon">⚔</span>
         <span><b>Pack Wars</b><small>Rip a pack and battle a friend with it</small></span>
@@ -163,16 +168,16 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script src="odds.js?v=14"></script>
-  <script src="commander.js?v=14"></script>
-  <script src="app.js?v=14"></script>
-  <script src="decks.js?v=14"></script>
-  <script src="config.js?v=14"></script>
-  <script src="vendor/supabase-2.119.0.js?v=14"></script>
-  <script src="social.js?v=14"></script>
-  <script src="trades.js?v=14"></script>
-  <script src="packwars-engine.js?v=14"></script>
-  <script src="packwars.js?v=14"></script>
+  <script src="odds.js?v=15"></script>
+  <script src="commander.js?v=15"></script>
+  <script src="app.js?v=15"></script>
+  <script src="decks.js?v=15"></script>
+  <script src="config.js?v=15"></script>
+  <script src="vendor/supabase-2.119.0.js?v=15"></script>
+  <script src="social.js?v=15"></script>
+  <script src="trades.js?v=15"></script>
+  <script src="packwars-engine.js?v=15"></script>
+  <script src="packwars.js?v=15"></script>
   <script>document.getElementById('openPackWars').onclick = () => window.PR.showView('packwars');</script>
 </body>
 </html>

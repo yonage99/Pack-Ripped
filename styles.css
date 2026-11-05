@@ -457,3 +457,5 @@ small.block { display: block; font-weight: 500; font-size: 12px; margin-top: 2px
 .pick-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; }
 .pick-row .stepper { width: 110px; }
 .trade-summary { position: sticky; bottom: calc(72px + var(--safe-bottom)); box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4); }
+
+.random-entry { background: linear-gradient(135deg, #1d4a5c, #2a2a6a); box-shadow: inset 0 0 0 1px rgba(120, 200, 255, 0.35); }
