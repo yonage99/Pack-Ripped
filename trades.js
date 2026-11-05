@@ -140,7 +140,7 @@
     }
     const thumbs = (items) =>
       `<div class="trade-thumbs">${(items || [])
-        .map((i) => `<div class="mini tiny ${i.foil ? 'is-foil' : ''}" title="${esc(i.card && i.card.name)}"><img src="${esc(i.card && i.card.img)}" alt="" loading="lazy">${i.qty > 1 ? `<span class="qty">×${i.qty}</span>` : ''}</div>`)
+        .map((i) => `<div class="mini tiny ${i.foil ? 'is-foil' : ''}" title="${esc(i.card && i.card.name)}"><img src="${esc(PR.thumb(i.card && i.card.img))}" alt="" loading="lazy">${i.qty > 1 ? `<span class="qty">×${i.qty}</span>` : ''}</div>`)
         .join('') || '<span class="muted small">nothing</span>'}</div>`;
     const tradeCard = (x, btns) => `<div class="trade" data-id="${esc(x.id)}">
         <div class="trade-head"><b>@${esc(x.other)}</b>${x.message ? `<span class="muted small">“${esc(x.message)}”</span>` : ''}</div>
@@ -301,7 +301,7 @@
           .map((e) => {
             const n = (sel[key(e.card.id, false)] || 0) + (sel[key(e.card.id, true)] || 0);
             return `<div class="mini ${e.card.rarity} ${e.f ? 'is-foil' : ''} ${n ? 'picked' : ''}" data-id="${esc(e.card.id)}">
-              <img src="${esc(e.card.img)}" alt="${esc(e.card.name)}" loading="lazy">${e.f ? '<div class="foil-sheen"></div>' : ''}
+              <img src="${esc(PR.thumb(e.card.img))}" alt="${esc(e.card.name)}" loading="lazy">${e.f ? '<div class="foil-sheen"></div>' : ''}
               <span class="qty">${n ? `✓ ${n}/` : '×'}${e.n + e.f}</span></div>`;
           })
           .join('') || '<div class="empty"><p class="muted">No cards.</p></div>'

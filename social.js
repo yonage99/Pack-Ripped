@@ -528,7 +528,7 @@
             Object.values(deck.basics || {}).reduce((s, n) => s + n, 0);
           const ident = C.identityOf(cm);
           return `<button class="deck-item" data-i="${i}">
-            <div class="deck-art">${cm.map((c) => `<img src="${esc(c.img)}" alt="">`).join('')}</div>
+            <div class="deck-art">${cm.map((c) => `<img src="${esc(PR.thumb(c.img))}" alt="">`).join('')}</div>
             <div class="deck-meta"><b>${esc(deck.name)}</b>
               <span>${ident ? ident.split('').map((x) => `<span class="pip pip-${x}">${x}</span>`).join('') : '<span class="pip pip-C">C</span>'}</span>
               <small>${count}/100 cards</small></div>
@@ -616,7 +616,7 @@
           .slice(0, 300)
           .map(
             (e) => `<div class="mini ${e.card.rarity} ${e.f ? 'is-foil' : ''}" data-id="${esc(e.card.id)}">
-            <img src="${esc(e.card.img)}" alt="${esc(e.card.name)}" loading="lazy">${e.f ? '<div class="foil-sheen"></div>' : ''}
+            <img src="${esc(PR.thumb(e.card.img))}" alt="${esc(e.card.name)}" loading="lazy">${e.f ? '<div class="foil-sheen"></div>' : ''}
             <span class="qty">×${e.n + e.f}</span></div>`
           )
           .join('') || '<div class="empty"><p class="muted">No cards.</p></div>'

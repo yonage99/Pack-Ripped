@@ -155,7 +155,10 @@
   document.querySelectorAll('.tabbar button').forEach((b) =>
     b.addEventListener('click', () => showView(b.dataset.view))
   );
+  const scrollPos = {};
   function showView(v) {
+    const was = document.querySelector('.view.active');
+    if (was) scrollPos[was.id] = window.scrollY;
     document.querySelectorAll('.view').forEach((s) => s.classList.toggle('active', s.id === 'view-' + v));
     document.querySelectorAll('.tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.view === v));
     if (v === 'open') loadSets();
@@ -164,7 +167,8 @@
     if (v === 'decks') window.PRDecks && window.PRDecks.render();
     if (v === 'friends') window.PRSocial && window.PRSocial.render();
     if (v === 'packwars') window.PRPackWars && window.PRPackWars.render();
-    window.scrollTo(0, 0);
+    // Collection comes back where you left it; other tabs start at the top.
+    window.scrollTo(0, v === 'collection' ? scrollPos['view-collection'] || 0 : 0);
   }
 
   // ---------- points ----------
@@ -898,7 +902,7 @@
           ${sorted
             .map(
               (p) => `<div class="mini ${p.card.rarity} ${p.foil ? 'is-foil' : ''}" data-id="${esc(p.card.id)}">
-              <img src="${esc(p.card.img)}" alt="${esc(p.card.name)}" loading="lazy">
+              <img src="${esc(thumb(p.card.img))}" alt="${esc(p.card.name)}" loading="lazy">
               ${p.foil ? '<div class="foil-sheen"></div>' : ''}
             </div>`
             )
@@ -960,6 +964,9 @@
   $('#openRandom').addEventListener('click', () => ripRandom());
 
   const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+  /** Smaller image for grids: Scryfall 'small' (~14 KB) / TCGdex 'low' instead of the full-size picture. */
+  const thumb = (u) =>
+    !u || u.startsWith('data:') ? u || '' : u.replace('/normal/', '/small/').replace('/large/', '/small/').replace(/\/high\.webp$/, '/low.webp');
   const rarityText = (c) => c.rarityLabel || cap(c.rarity);
 
   // ---------- collection ----------
@@ -968,6 +975,7 @@
   }
 
   let folder = 'all';
+  let lastGridKey = null;
   document.querySelectorAll('#collFolders button').forEach(
     (b) =>
       (b.onclick = () => {
@@ -1026,7 +1034,10 @@
     list.sort(sorters[sort]);
 
     const grid = $('#collGrid');
-    if (!all.length) {
+    const key = [folder, all.length, list.length, ...list.slice(0, 300).map((e) => `${e.card.id}:${e.n}:${e.f}`)].join('|');
+    if (key === lastGridKey) {
+      // Same cards as last time: keep the grid (and its loaded pictures) as is.
+    } else if (!all.length) {
       grid.innerHTML = `<div class="empty"><p>No cards yet.</p><p class="muted">You start with 100 ◆, enough for your first pack. Go to <b>Open</b> to rip one!</p></div>`;
     } else if (!list.length) {
       grid.innerHTML = `<div class="empty"><p class="muted">No cards match.</p></div>`;
@@ -1036,13 +1047,14 @@
         shown
           .map(
             (e) => `<div class="mini ${e.card.rarity} ${e.f ? 'is-foil' : ''}" data-id="${esc(e.card.id)}">
-          <img src="${esc(e.card.img)}" alt="${esc(e.card.name)}" loading="lazy">
+          <img src="${esc(thumb(e.card.img))}" alt="${esc(e.card.name)}" loading="lazy">
           ${e.f ? '<div class="foil-sheen"></div>' : ''}
           <span class="qty">×${e.n + e.f}</span>
         </div>`
           )
           .join('') + (list.length > shown.length ? `<p class="muted small">Showing 300 of ${list.length}. Filter to see more.</p>` : '');
     }
+    lastGridKey = key;
 
     $('#historyList').innerHTML =
       state.history
@@ -1147,7 +1159,7 @@
   // Shared helpers for decks.js
   window.PR = {
     get state() { return state; },
-    save, scry, esc, toast, dialog, cardPrice, showCard, cap, money, slimCard, API, showView,
+    save, scry, esc, toast, dialog, cardPrice, showCard, cap, money, slimCard, API, showView, thumb,
     ripPack, costFor, renderPoints,
     getSets: async () => {
       if (!sets) await loadSets();

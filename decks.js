@@ -148,7 +148,7 @@
           const v = validate(d);
           const cm = commandersOf(d);
           return `<button class="deck-item" data-id="${esc(d.id)}">
-            <div class="deck-art">${cm.map((c) => `<img src="${esc(c.img)}" alt="">`).join('')}</div>
+            <div class="deck-art">${cm.map((c) => `<img src="${esc(PR.thumb(c.img))}" alt="">`).join('')}</div>
             <div class="deck-meta">
               <b>${esc(d.name)}</b>
               <span>${pips(v.identity)}</span>
@@ -200,7 +200,7 @@
             ? options
                 .map(
                   (c) => `<div class="mini pick ${c.rarity}" data-id="${esc(c.id)}">
-              <img src="${esc(c.img)}" alt="${esc(c.name)}" loading="lazy">
+              <img src="${esc(PR.thumb(c.img))}" alt="${esc(c.name)}" loading="lazy">
               <span class="qty">${pips(c.ci)}</span>
             </div>`
                 )
@@ -454,7 +454,7 @@
             ? list
                 .map(
                   ({ c, used, max, banned }) => `<div class="mini addable ${c.rarity} ${used >= max || banned ? 'maxed' : ''}" data-id="${esc(c.id)}">
-              <img src="${esc(c.img)}" alt="${esc(c.name)}" loading="lazy">
+              <img src="${esc(PR.thumb(c.img))}" alt="${esc(c.name)}" loading="lazy">
               <button class="info" aria-label="Details">ⓘ</button>
               ${banned ? '<span class="tag bad-tag">Banned</span>' : used ? `<span class="tag">${used >= max ? 'In deck ✓' : `${used}/${max}`}</span>` : ''}
             </div>`
@@ -552,7 +552,7 @@
         <p class="muted small">Your other cards stay in the deck. Any that no longer fit the colors will be flagged.</p>
       </div>
       <div class="grid">${options
-        .map((c) => `<div class="mini pick ${c.rarity}" data-id="${esc(c.id)}"><img src="${esc(c.img)}" alt="${esc(c.name)}" loading="lazy"></div>`)
+        .map((c) => `<div class="mini pick ${c.rarity}" data-id="${esc(c.id)}"><img src="${esc(PR.thumb(c.img))}" alt="${esc(c.name)}" loading="lazy"></div>`)
         .join('')}</div>`;
     const back = () => {
       view = { mode: 'edit', deckId: deck.id, tab: 'list', q: '', type: '' };

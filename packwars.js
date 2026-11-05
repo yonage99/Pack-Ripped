@@ -376,7 +376,7 @@
       <div class="grid small-grid">${deck.cards
         .map(
           (p, i) => `<div class="mini ${p.card.rarity} ${p.foil ? 'is-foil' : ''} ${cut[i] ? 'maxed' : ''}" data-i="${i}">
-          <img src="${esc(p.card.img)}" alt="${esc(p.card.name)}" loading="lazy">${cut[i] ? '<span class="tag bad-tag">Cut</span>' : ''}</div>`
+          <img src="${esc(PR.thumb(p.card.img))}" alt="${esc(p.card.name)}" loading="lazy">${cut[i] ? '<span class="tag bad-tag">Cut</span>' : ''}</div>`
         )
         .join('')}</div>
       <div class="card-panel">
@@ -577,7 +577,7 @@
   }
 
   const cardEl = (x, zone, mine) => `<div class="pwc ${x.tapped ? 'tapped' : ''} ${x.foil ? 'is-foil' : ''}" data-id="${esc(x.id)}" data-zone="${zone}" data-mine="${mine ? 1 : 0}">
-      ${x.c.img ? `<img src="${esc(x.c.img)}" alt="${esc(x.c.name)}" loading="lazy">` : `<span class="pwc-name">${esc(x.c.name)}</span>`}
+      ${x.c.img ? `<img src="${esc(PR.thumb(x.c.img))}" alt="${esc(x.c.name)}" loading="lazy">` : `<span class="pwc-name">${esc(x.c.name)}</span>`}
       ${x.counters ? `<span class="ctr">${x.counters > 0 ? '+' : ''}${x.counters}/${x.counters > 0 ? '+' : ''}${x.counters}</span>` : ''}
     </div>`;
 
@@ -849,7 +849,7 @@
       <div class="grid small-grid">${list
         .slice()
         .reverse()
-        .map((x) => `<div class="mini" data-id="${esc(x.id)}">${x.c.img ? `<img src="${esc(x.c.img)}" alt="">` : esc(x.c.name)}</div>`)
+        .map((x) => `<div class="mini" data-id="${esc(x.id)}">${x.c.img ? `<img src="${esc(PR.thumb(x.c.img))}" alt="">` : esc(x.c.name)}</div>`)
         .join('') || '<p class="muted">Empty</p>'}</div>
       <button class="btn wide" id="pvClose">Close</button>`,
       (close) => {
@@ -879,7 +879,7 @@
     const list = s.zones.library.map((id) => ({ id, ...s.cards[id] })).sort((a, b) => a.c.name.localeCompare(b.c.name));
     dialog(
       `<h3>Search your library</h3><p class="muted small">Only when a card tells you to. Tap a card to take it; your library is shuffled afterwards.</p>
-      <div class="grid small-grid">${list.map((x) => `<div class="mini" data-id="${esc(x.id)}">${x.c.img ? `<img src="${esc(x.c.img)}" alt="">` : esc(x.c.name)}</div>`).join('')}</div>
+      <div class="grid small-grid">${list.map((x) => `<div class="mini" data-id="${esc(x.id)}">${x.c.img ? `<img src="${esc(PR.thumb(x.c.img))}" alt="">` : esc(x.c.name)}</div>`).join('')}</div>
       <button class="btn wide" id="slClose">Done (shuffle)</button>`,
       (close) => {
         document.getElementById('slClose').onclick = () => {
