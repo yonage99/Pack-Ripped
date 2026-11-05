@@ -27,6 +27,12 @@ added to your collection.
   [SETUP-FRIENDS.md](SETUP-FRIENDS.md)): sign up with a username, add friends,
   browse each other's collections and decks, and compete on steps today, this
   week, or all time.
+- **Trading** with friends (needs the Friends server): pick cards from their
+  collection and yours, send an offer, and they accept or decline. The swap
+  happens on the server in one step, and each phone applies it on its next
+  sync. If you trade away a card a deck uses, the deck switches to another copy
+  you own, or the card leaves the deck and frees the slot. You're warned before
+  offering.
 - **Pack Wars** (official "Mini-Master" rules from Wizards' minigame card): each
   player rips a pack face down, adds three of each basic land, shuffles and plays.
   Best of three; between games keep your deck, add a pack and cut to 30, or

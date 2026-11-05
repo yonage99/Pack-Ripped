@@ -443,3 +443,17 @@ ol.steps b { color: var(--text); }
 .owe { background: rgba(255, 179, 71, 0.15); border: 1px solid rgba(255, 179, 71, 0.5); border-radius: 10px; padding: 8px 10px; font-size: 13px; }
 small.block { display: block; font-weight: 500; font-size: 12px; margin-top: 2px; }
 .btn:disabled small.block { color: var(--muted); }
+
+/* Trades */
+.trade { background: var(--panel2); border-radius: 12px; padding: 10px; margin-bottom: 10px; }
+.trade-head { display: flex; flex-direction: column; margin-bottom: 6px; }
+.trade-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.trade-sides p { margin: 4px 0; }
+.trade-thumbs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.mini.tiny { width: 46px; border-radius: 4px; }
+.mini.tiny .qty { font-size: 10px; padding: 0 4px; }
+.mini.picked { box-shadow: 0 0 0 3px var(--accent); }
+.mini.picked .qty { background: var(--accent); color: #1b1020; }
+.pick-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; }
+.pick-row .stepper { width: 110px; }
+.trade-summary { position: sticky; bottom: calc(72px + var(--safe-bottom)); box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4); }

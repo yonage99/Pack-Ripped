@@ -83,12 +83,24 @@
     try {
       const steps = myStepsToday();
       if (steps > 0) await rpc('log_steps', { p_day: today(), p_steps: steps });
+      // Completed trades change this phone's collection (and can free deck slots).
+      if (window.PRTrades && (await window.PRTrades.applyEvents())) dirty = true;
       if (dirty) {
         // Older cards may lack color/deck info; fill it in so friends see it correctly.
         if (window.PRDecks && window.PRDecks.ensureCardData) await window.PRDecks.ensureCardData();
-        const s = snapshot();
+        const push = () => {
+          const s = snapshot();
+          return rpc('push_data', { p_collection: s.collection, p_decks: s.decks, p_stats: s.stats, p_events_seen: PR.state.tradeSeen || 0 });
+        };
         dirty = false;
-        await rpc('push_data', { p_collection: s.collection, p_decks: s.decks, p_stats: s.stats });
+        try {
+          await push();
+        } catch (e) {
+          // A trade finished while we were syncing: apply it, then send again.
+          if (!/TRADES_PENDING/.test((e && e.message) || '') || !window.PRTrades) throw e;
+          await window.PRTrades.applyEvents();
+          await push();
+        }
       }
       lastSync = Date.now();
       const el = document.getElementById('frSync');
@@ -100,6 +112,12 @@
     } finally {
       syncing = false;
     }
+  }
+
+  async function syncFresh() {
+    dirty = true;
+    for (let i = 0; i < 20 && syncing; i++) await new Promise((r) => setTimeout(r, 150));
+    await syncNow();
   }
 
   function scheduleSync(delay) {
@@ -264,6 +282,7 @@
         </form>
         <p class="muted small">Your username is <b>@${esc(me.username)}</b>. Share it so friends can add you.</p>
       </div>
+      <div id="frTrades"></div>
       <div id="frLists"><div class="card-panel"><div class="spinner"></div></div></div>`;
 
     document.getElementById('frLogout').onclick = async () => {
@@ -311,6 +330,7 @@
     await syncNow();
     loadBoard();
     loadLists();
+    if (window.PRTrades) window.PRTrades.renderPanel(document.getElementById('frTrades'));
   }
 
   async function loadBoard() {
@@ -447,6 +467,7 @@
           <div><b>${money(st.value)}</b><small>value</small></div>
           <div><b>${fmt(st.packs)}</b><small>packs</small></div>
         </div>
+        <button class="btn primary wide" id="fTrade">⇄ Propose a trade</button>
       </div>
       <div class="seg tabs-seg">
         <button data-t="decks" class="${view.ftab === 'decks' ? 'on' : ''}">Decks (${decks.length})</button>
@@ -454,6 +475,7 @@
       </div>
       <div id="fBody"></div>`;
     document.getElementById('fBack').onclick = backHome;
+    document.getElementById('fTrade').onclick = () => window.PRTrades && window.PRTrades.compose(u, d);
     document.getElementById('fRemove').onclick = () =>
       PR.dialog(
         `<h3>Unfriend @${esc(u)}?</h3><p class="muted">You'll stop seeing each other's collections and decks.</p>
@@ -638,7 +660,8 @@
   if (configured) loadMe();
 
   window.PRSocial = {
-    render, syncNow, rpc, configured,
+    render, syncNow, syncFresh, rpc, configured,
+    friendCacheClear: (u) => delete friendCache[u],
     get me() { return me; },
   };
 })();
