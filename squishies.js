@@ -23,6 +23,13 @@
   const CATALOG = [
     {
       name: 'RMS Mystery Dumpling', match: ['rms'], style: 'spinner',
+      named: [
+        ['Sherbet Dumpling', 'common'], ['Neon Dumpling', 'common'], ['Shark Dumpling', 'common'], ['Seashell Dumpling', 'common'],
+        ['Sunset Dumpling', 'common'], ['Party Confetti Dumpling', 'common'], ['Stuffed Bun Dumpling', 'common'],
+        ['Water-Filled Dumpling', 'common'], ['Color Changing Dumpling', 'rare'], ['Galaxy Dumpling', 'rare'],
+        ['Starlight Dumpling', 'rare'], ['Spooky Ghost Dumpling', 'rare'], ['Green Holographic Dumpling', 'rare'],
+        ['Purple Holographic Dumpling', 'rare'], ['Ultra-Rare Glitter Dumpling', 'super'], ['Golden Ticket Dumpling', 'super'],
+      ].map(([n, r]) => [n, r, 'dumpling']),
       items: [
         ["Mystery Squishy Dumpling: Pink Glitter Edition", 'common', 'dumpling', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-08-19T130702.142.jpg?v=1787116080&width=500"],
         ["Rainbow Mystery Bao Bun", 'rare', 'dumpling', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-05-05T014651.864.jpg?v=1777924062&width=500"],
@@ -30,6 +37,14 @@
     },
     {
       name: 'NeeDoh', match: ['nee-doh', 'needoh', 'nee doh'], style: 'bag',
+      // (Nice Ice Baby and Teenie Cool Cats are the same products as the Teenie photo items, so they're not repeated.)
+      named: [
+        ['The Groovy Glob', 'common', 'ball'], ['Gumdrop', 'common', 'drop'], ['Snowball Crunch', 'common', 'ball'],
+        ['Teenie NeeDoh', 'common', 'ball'], ['Dohnut', 'common', 'donut'], ['Groovy Fruit', 'common', 'drop'],
+        ['Nice Cube Swirl', 'rare', 'cube'], ['Nice Cube Glitter & Glow', 'rare', 'cube'], ['Jellyfish', 'rare', 'drop'],
+        ['Fuzzball', 'rare', 'ball'], ['Dream Drop', 'rare', 'drop'], ['Nice Sicle', 'rare', 'drop'],
+        ['Nice Berg', 'super', 'cube'], ['Atomic NeeDoh', 'super', 'ball'],
+      ],
       items: [
         ["Teenie Fuzz Ball (multi-pack)", 'common', 'ball', "https://cdn.shopify.com/s/files/1/0570/3537/files/needoh_teenie_fuzz_ball_multipack_1_777ea53d-2134-41e1-aeb5-8ac2ba4c6cae.webp?v=1769058110&width=500"],
         ["Teenie Nice Ice Baby (multi-pack)", 'common', 'ball', "https://cdn.shopify.com/s/files/1/0570/3537/files/needoh_teenie_nice_ice_baby_multipack_1.webp?v=1770161825&width=500"],
@@ -46,7 +61,7 @@
       ],
     },
   ];
-  // Items from the first starter list (names only, no real photos): removed in favor of the real ones.
+  // Names from the first starter list (kept for reference; nothing is removed anymore).
   const OLD_CATALOG = ['Sherbet Dumpling', 'Neon Dumpling', 'Shark Dumpling', 'Seashell Dumpling', 'Sunset Dumpling',
     'Party Confetti Dumpling', 'Stuffed Bun Dumpling', 'Water-Filled Dumpling', 'Color Changing Dumpling', 'Galaxy Dumpling',
     'Starlight Dumpling', 'Spooky Ghost Dumpling', 'Green Holographic Dumpling', 'Purple Holographic Dumpling',
@@ -57,21 +72,23 @@
   function data() {
     const s = PR.state;
     if (!s.squish) s.squish = { bagCost: 50, brands: [] };
-    if (!s.squish.catalogV2) {
+    if (!s.squish.catalogV3) {
       for (const c of CATALOG) {
         let b = s.squish.brands.find((x) => c.match.some((m) => x.name.toLowerCase().replace(/[^a-z ]/g, '').startsWith(m.replace(/[^a-z ]/g, ''))));
         if (!b) s.squish.brands.push((b = { id: uid(), name: c.name, items: [] }));
         b.name = c.name;
         b.style = c.style;
-        // Remove the earlier made-up/name-only items, including copies already opened.
-        for (const i of b.items.filter((x) => !x.img && OLD_CATALOG.includes(x.name.toLowerCase()))) delete s.collection[`sq:${b.id}:${i.id}`];
-        b.items = b.items.filter((x) => x.img || !OLD_CATALOG.includes(x.name.toLowerCase()));
+        // Items with real store photos.
         for (const [name, rarity, shape, img] of c.items) {
           const have = b.items.find((i) => i.name.toLowerCase() === name.toLowerCase());
           if (have) Object.assign(have, { img, rarity });
           else b.items.push({ id: uid(), name, rarity, shape, img });
         }
+        // Real product names without a photo yet (shown with a simple drawing). Never removes anything.
+        for (const [name, rarity, shape] of c.named || [])
+          if (!b.items.some((i) => i.name.toLowerCase() === name.toLowerCase())) b.items.push({ id: uid(), name, rarity, shape });
       }
+      s.squish.catalogV3 = true;
       s.squish.catalogV2 = true;
       s.squish.catalogV1 = true;
       // RMS first, then NeeDoh, then anything you added.
@@ -250,7 +267,7 @@
     el.innerHTML = `
       <div class="card-panel">
         <h2>Squishies</h2>
-        <p class="muted small">Real products with real photos from toy-store listings: NeeDoh and RMS Mystery Dumplings come preloaded. Tap Edit to add or change items, or add your own brands. Each spin or bag gives a random item: common 70%, rare 25%, super rare 5%. Rarities are based on demand (purchase limits, sold-out items), not official odds. Items you add yourself get a simple drawing.</p>
+        <p class="muted small">Real products: NeeDoh and RMS Mystery Dumplings come preloaded, with real store photos where available and a simple drawing for the rest. Tap Edit to add or change items, or add your own brands. Each spin or bag gives a random item: common 70%, rare 25%, super rare 5%. Rarities are based on demand (purchase limits, sold-out items), not official odds. Items you add yourself get a simple drawing.</p>
       </div>
       ${d.brands
         .map((b) => {
