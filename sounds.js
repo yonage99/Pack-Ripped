@@ -119,10 +119,10 @@
       const a = audio();
       if (!a) return;
       const t0 = a.currentTime + 0.01;
-      const n = 7;
-      for (let i = 0; i < n; i++) {
-        const t = t0 + i * 0.06 + Math.random() * 0.03;
-        clink(a, t, 2200 + Math.random() * 1600, 0.09 + Math.random() * 0.05);
+      // A light rattle: 4 quiet coins.
+      for (let i = 0; i < 4; i++) {
+        const t = t0 + i * 0.07 + Math.random() * 0.03;
+        clink(a, t, 2400 + Math.random() * 1200, 0.05 + Math.random() * 0.02);
       }
     },
 
@@ -186,12 +186,22 @@
      * Every revealed card gets a sound, bigger for better cards.
      * price: market value in dollars (0 when unknown).
      */
+    /** A tiny metal "ching": one short, soft, high ring. bright = a touch fuller. */
+    ching(bright) {
+      const a = audio();
+      if (!a) return;
+      const t = a.currentTime + 0.01;
+      const f = bright ? 3520 : 3135; // A7 / G7
+      tone(a, t, f, bright ? 0.22 : 0.16, bright ? 0.07 : 0.05, 'sine');
+      tone(a, t, f * 2.76, 0.07, bright ? 0.022 : 0.015, 'sine'); // faint metallic overtone
+    },
+
     forCard(card, price) {
       const tier = api.tier(card, price);
       if (tier === 'huge') api.dings();
       else if (tier === 'big') api.coin();
-      else if (tier === 'nice') api.drop(3);
-      else api.drop(2);
+      else if (tier === 'nice') api.ching(true);
+      else api.ching(false);
       return tier;
     },
 
