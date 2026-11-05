@@ -275,6 +275,7 @@
               v.warnings.map((w) => `<p class="muted small">${esc(w)}</p>`).join('')
         }
       </div>
+      <button class="btn wide mx-btn" id="edExport">⇪ Export to Moxfield</button>
       <div class="seg tabs-seg">
         <button data-tab="list" class="${view.tab === 'list' ? 'on' : ''}">Deck list</button>
         <button data-tab="add" class="${view.tab === 'add' ? 'on' : ''}">Add cards</button>
@@ -291,6 +292,7 @@
       PR.save();
     };
     document.getElementById('edMenu').onclick = () => deckMenu(deck);
+    document.getElementById('edExport').onclick = () => exportToMoxfield(deck);
     root().querySelectorAll('.cmdr[data-id]').forEach((el) => (el.onclick = () => commanderMenu(deck, el.dataset.id)));
     const pb = document.getElementById('edPartner');
     if (pb) pb.onclick = () => {
@@ -566,43 +568,107 @@
     );
   }
 
-  function decklistText(deck) {
+  // Moxfield import format: "1 Card Name (SET) 123 *F*". Set/number/foil keep the exact printing you pulled.
+  function cardLine(id, n, exact) {
+    const e = PR.state.collection[id];
+    const c = e && e.card;
+    if (!c) return null;
+    if (!exact) return `${n} ${c.name}`;
+    const foil = e.f > 0 && e.n === 0 ? ' *F*' : '';
+    return `${n} ${c.name} (${String(c.set).toUpperCase()}) ${c.num}${foil}`;
+  }
+
+  function decklistText(deck, exact) {
     const lines = ['Commander'];
-    commandersOf(deck).forEach((c) => lines.push(`1 ${c.name}`));
+    deck.commanders.forEach((id) => {
+      const l = cardLine(id, 1, exact);
+      if (l) lines.push(l);
+    });
     lines.push('', 'Deck');
     for (const [id, n] of Object.entries(deck.cards)) {
-      const c = getCard(id);
-      if (c) lines.push(`${n} ${c.name}`);
+      const l = cardLine(id, n, exact);
+      if (l) lines.push(l);
     }
     C.BASICS.forEach((b) => deck.basics[b.name] && lines.push(`${deck.basics[b.name]} ${b.name}`));
     return lines.join('\n');
+  }
+
+  // Copy text inside a tap handler. Falls back to selecting a textarea for older browsers.
+  function copyText(text, ta) {
+    let ok = false;
+    try {
+      if (ta) {
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, text.length);
+        ok = document.execCommand && document.execCommand('copy');
+      }
+    } catch {}
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(() => true, () => ok);
+    }
+    return Promise.resolve(ok);
+  }
+
+  let exactPrintings = true;
+  function exportToMoxfield(deck) {
+    const v = validate(deck);
+    const draw = () => {
+      const text = decklistText(deck, exactPrintings);
+      dialog(
+        `<h3>Export to Moxfield</h3>
+        ${v.ok ? '<p class="ok small">✓ Legal 100-card Commander deck</p>' : `<p class="bad small">Heads up: this deck isn't legal yet (${v.count}/100${v.problems.length ? `, ${v.problems.length} issue${v.problems.length === 1 ? '' : 's'}` : ''}). You can still export it.</p>`}
+        <textarea class="backup" id="mxText" readonly>${esc(text)}</textarea>
+        <label class="check"><input type="checkbox" id="mxExact" ${exactPrintings ? 'checked' : ''}> Keep my exact printings (set, number, foil)</label>
+        <div class="col">
+          <a class="btn primary" id="mxGo" href="https://moxfield.com/" target="_blank" rel="noopener">Copy list &amp; open Moxfield</a>
+          <div class="row" style="margin-top:0">
+            <button class="btn" id="mxCopy">Copy only</button>
+            ${navigator.share ? '<button class="btn" id="mxShare">Share…</button>' : ''}
+          </div>
+        </div>
+        <ol class="steps">
+          <li>Tap <b>Copy list &amp; open Moxfield</b> and sign in.</li>
+          <li>Tap <b>Create Deck</b> (or <b>Import</b>), set the format to <b>Commander</b>.</li>
+          <li>Paste into the import box and save.</li>
+          <li>If the commander isn't set automatically, tap it in Moxfield and choose <b>Set as Commander</b>.</li>
+        </ol>
+        <button class="btn wide" id="mxClose">Close</button>`,
+        (close) => {
+          const ta = document.getElementById('mxText');
+          document.getElementById('mxClose').onclick = close;
+          document.getElementById('mxExact').onchange = (e) => {
+            exactPrintings = e.target.checked;
+            draw();
+          };
+          document.getElementById('mxGo').onclick = () => {
+            // Don't block the link: copy runs during the same tap, then Moxfield opens.
+            copyText(text, ta).then((ok) => toast(ok ? 'Decklist copied. Paste it in Moxfield' : 'Copy the list above, then paste it in Moxfield'));
+          };
+          document.getElementById('mxCopy').onclick = () =>
+            copyText(text, ta).then((ok) => toast(ok ? 'Decklist copied' : 'Select the text above and copy it'));
+          const sh = document.getElementById('mxShare');
+          if (sh) sh.onclick = () => navigator.share({ title: deck.name, text }).catch(() => {});
+        }
+      );
+    };
+    draw();
   }
 
   function deckMenu(deck) {
     dialog(
       `<h3>${esc(deck.name)}</h3>
       <div class="col">
-        <button class="btn" data-a="copy">Copy decklist</button>
+        <button class="btn" data-a="copy">Export to Moxfield</button>
         <button class="btn" data-a="dup">Duplicate deck</button>
         <button class="btn danger" data-a="del">Delete deck</button>
         <button class="btn primary" data-a="close">Close</button>
       </div>
-      <p class="muted small">The decklist pastes straight into Moxfield, Archidekt or MTG Arena-style importers.</p>`,
+      `,
       (close) => {
         const box = document.getElementById('dialogBox');
         box.querySelector('[data-a=close]').onclick = close;
-        box.querySelector('[data-a=copy]').onclick = async () => {
-          const text = decklistText(deck);
-          try {
-            await navigator.clipboard.writeText(text);
-            toast('Decklist copied');
-            close();
-          } catch {
-            box.innerHTML = `<h3>Decklist</h3><textarea class="backup" readonly>${esc(text)}</textarea>
-              <div class="row center"><button class="btn primary" id="dlClose">Close</button></div>`;
-            document.getElementById('dlClose').onclick = close;
-          }
-        };
+        box.querySelector('[data-a=copy]').onclick = () => exportToMoxfield(deck);
         box.querySelector('[data-a=dup]').onclick = () => {
           const copy = JSON.parse(JSON.stringify(deck));
           copy.id = 'd' + Date.now();

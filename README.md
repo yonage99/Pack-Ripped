@@ -22,7 +22,7 @@ added to your collection.
 - **Commander deck builder**: build 100-card decks using only cards you own,
   plus unlimited basic lands (Plains, Island, Swamp, Mountain, Forest, Wastes).
   Checks commander eligibility, partners/Backgrounds, color identity,
-  singleton, and the Commander ban list. Copy the decklist for Moxfield or Archidekt.
+  singleton, and the Commander ban list. Export to Moxfield in one tap: it copies the list (with your exact printings and foils) and opens Moxfield so you can paste it in.
 - **Collection** with copies, foils, market prices, filters, and pack history.
 - Installable on your phone's home screen. Backup and restore by copy/paste.
 
