@@ -412,9 +412,42 @@
     return r.json();
   }
 
-  let sets = null;
+  let sets = null; // Magic sets (Scryfall)
+  let pkSets = null; // Pokémon sets (TCGdex)
+  let game = (() => {
+    try { return localStorage.getItem('packripped:game') || 'magic'; } catch { return 'magic'; }
+  })();
+  const shownSets = () => (game === 'pokemon' ? pkSets : sets);
+
+  function setGame(g) {
+    game = g;
+    try { localStorage.setItem('packripped:game', g); } catch {}
+    document.querySelectorAll('#gameSwitch button').forEach((b) => b.classList.toggle('on', b.dataset.game === g));
+    $('#openPackWars').classList.toggle('hidden', g !== 'magic');
+    $('#randomSub').textContent = g === 'pokemon' ? 'A surprise Pokémon set' : 'A surprise set. 1 in 5 is a Collector Booster!';
+    $('#setSearch').value = '';
+    loadSets();
+  }
+  document.querySelectorAll('#gameSwitch button').forEach((b) => (b.onclick = () => setGame(b.dataset.game)));
+
+  async function loadPokemonSets() {
+    if (!pkSets) {
+      $('#setList').innerHTML = '<p class="muted">Loading Pokémon sets…</p>';
+      try {
+        pkSets = await window.Pokemon.loadSets();
+      } catch {
+        $('#setList').innerHTML = `<p class="muted">Couldn't load Pokémon sets. Check your connection and try again.</p>
+          <button class="btn" id="retrySets">Retry</button>`;
+        $('#retrySets').onclick = loadSets;
+        return;
+      }
+    }
+    if (game === 'pokemon') renderSets();
+  }
+
   async function loadSets() {
     renderPoints();
+    if (game === 'pokemon') return loadPokemonSets();
     if (sets) return renderSets();
     const cached = lsGet(SETS_KEY);
     if (cached && Date.now() - cached.at < 86400000) {
@@ -446,25 +479,31 @@
   }
 
   function renderSets() {
+    const all = shownSets();
+    if (!all) return;
     const q = $('#setSearch').value.trim().toLowerCase();
-    const list = sets.filter((s) => !q || s.name.toLowerCase().includes(q) || s.code.includes(q));
+    const list = all.filter((s) => !q || s.name.toLowerCase().includes(q) || s.code.includes(q));
     const canAfford = state.points >= state.packCost;
     $('#setList').innerHTML =
       list
         .map(
           (s) => `<button class="set-item" data-code="${esc(s.code)}">
-          <img class="set-icon" src="${esc(s.icon)}" alt="" loading="lazy">
+          <img class="set-icon ${s.game === 'pokemon' ? 'pk' : ''}" src="${esc(s.icon)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
           <span class="set-meta"><b>${esc(s.name)}</b>
-          <small>${esc(s.released.slice(0, 4))} · ${ODDS[boosterTypeFor(s.released)].name}${hasCollector(s.released) ? ' · <span class="cb-badge">Collector</span>' : ''}</small></span>
+          <small>${
+            s.game === 'pokemon'
+              ? `${esc(s.series)} · Booster Pack`
+              : `${esc(s.released.slice(0, 4))} · ${ODDS[boosterTypeFor(s.released)].name}${hasCollector(s.released) ? ' · <span class="cb-badge">Collector</span>' : ''}`
+          }</small></span>
           <span class="set-cost ${canAfford ? '' : 'poor'}">${state.packCost} ◆</span>
         </button>`
         )
         .join('') || '<p class="muted">No sets match.</p>';
   }
-  $('#setSearch').addEventListener('input', () => sets && renderSets());
+  $('#setSearch').addEventListener('input', () => shownSets() && renderSets());
   $('#setList').addEventListener('click', (e) => {
     const b = e.target.closest('.set-item');
-    if (b) confirmOpen(sets.find((s) => s.code === b.dataset.code));
+    if (b) confirmOpen(shownSets().find((s) => s.code === b.dataset.code));
   });
 
   function slimCard(c) {
@@ -573,6 +612,7 @@
 
   // ---------- opening packs ----------
   function confirmOpen(set, chosen) {
+    if (set.game === 'pokemon') return confirmOpenPokemon(set);
     const base = boosterTypeFor(set.released);
     const type = chosen || base;
     const o = ODDS[type];
@@ -610,6 +650,30 @@
     );
   }
 
+  function confirmOpenPokemon(set) {
+    const cost = costFor('pokemon');
+    const can = state.points >= cost;
+    const slots = window.Pokemon.SLOTS[set.era] || window.Pokemon.SLOTS.sv;
+    dialog(
+      `${set.logo ? `<img class="pk-logo" src="${esc(set.logo)}" alt="" onerror="this.remove()">` : ''}
+      <h3>${esc(set.name)}</h3>
+      <p class="muted">${esc(set.series)} · Booster Pack · 10 cards</p>
+      <table class="odds">${slots.map(([n, d]) => `<tr><td>${n}</td><td>${esc(d)}</td></tr>`).join('')}</table>
+      <p class="muted small">The Pokémon Company doesn't publish pull rates, so these are approximate, based on community pull-rate studies. Card data from TCGdex, prices from TCGplayer.</p>
+      <div class="row">
+        <button class="btn" data-act="cancel">Cancel</button>
+        <button class="btn primary" data-act="open" ${can ? '' : 'disabled'}>${can ? `Rip it! (${cost} ◆)` : `Need ${cost - state.points} more ◆`}</button>
+      </div>`,
+      (close) => {
+        $('#dialogBox').querySelector('[data-act=cancel]').onclick = close;
+        $('#dialogBox').querySelector('[data-act=open]').onclick = () => {
+          close();
+          ripPack(set, 'pokemon');
+        };
+      }
+    );
+  }
+
   let ripping = false;
   let ripDone = null; // set when another feature (Pack Wars) wants the pulled cards back
   let ripBlind = false; // Pack Wars: rip it, but don't look at the cards
@@ -628,11 +692,17 @@
     ov.classList.remove('hidden');
     stage.innerHTML = `<div class="loading"><div class="spinner"></div><p id="loadMsg">Shuffling ${esc(set.name)}…</p></div>`;
     let pool;
+    const pokemon = set.game === 'pokemon';
     try {
-      pool = await loadPool(set.code, (n, t, what) => {
-        const m = $('#loadMsg');
-        if (m) m.textContent = `Loading ${what === 'special' ? 'special versions' : 'cards'}… ${n}/${t}`;
-      }, type === 'collector');
+      pool = pokemon
+        ? await window.Pokemon.loadPool(set, (n, t) => {
+            const m = $('#loadMsg');
+            if (m) m.textContent = `Loading cards… ${Math.round((n / t) * 100)}%`;
+          })
+        : await loadPool(set.code, (n, t, what) => {
+            const m = $('#loadMsg');
+            if (m) m.textContent = `Loading ${what === 'special' ? 'special versions' : 'cards'}… ${n}/${t}`;
+          }, type === 'collector');
     } catch (e) {
       pool = null;
     }
@@ -654,7 +724,12 @@
       return;
     }
 
-    const pulls = openPack(pool, type);
+    const pulls = pokemon ? window.Pokemon.openPack(pool, set.era) : openPack(pool, type);
+    if (pokemon) {
+      const m = $('#loadMsg');
+      if (m) m.textContent = 'Checking prices…';
+      await window.Pokemon.fillDetails([...new Set(pulls.map((p) => p.card))], 8000);
+    }
     // Pay & record before reveal, so closing the app mid-reveal doesn't lose cards.
     state.points -= cost;
     state.packsOpened += 1;
@@ -672,6 +747,7 @@
       set: set.code,
       setName: set.name,
       type,
+      game: set.game || 'magic',
       value,
       best: bestPull(pulls).card.name,
       cards: pulls.map((p) => [p.card.id, p.foil ? 1 : 0]),
@@ -694,12 +770,13 @@
   function showPackFront(set, pulls, value, type) {
     const stage = $('#packStage');
     stage.innerHTML = `
-      <div class="pack ${type === 'collector' ? 'collector' : ''}" id="pack">
+      <div class="pack ${type === 'collector' ? 'collector' : ''} ${type === 'pokemon' ? 'pokemon' : ''}" id="pack">
         <div class="pack-top"></div>
         <div class="pack-body">
-          <img src="${esc(set.icon)}" alt="">
+          ${set.game === 'pokemon' ? '' : `<img src="${esc(set.icon)}" alt="">`}
           <div class="pack-name">${esc(set.name)}</div>
           <div class="pack-type">${ripRandomPack ? '🎲 Random pack · ' : ''}${ODDS[type].name}</div>
+          ${set.game === 'pokemon' && set.logo ? `<img class="pk-logo" src="${esc(set.logo)}" alt="" onerror="this.remove()">` : ''}
         </div>
       </div>
       <p class="hint">${ripBlind ? 'Tap to rip it open. No peeking: the cards go straight into your deck, face down.' : 'Tap the pack to rip it open'}</p>`;
@@ -750,7 +827,7 @@
           <span class="rarity-dot ${p.card.rarity}"></span>
           <b>${esc(p.card.name)}</b>${p.foil ? ' <span class="foil-tag">FOIL</span>' : ''}
           ${ownedBefore ? '<span class="new-tag">NEW</span>' : ''}
-          <div class="muted small">${cap(p.card.rarity)}${p.card.treat ? ' · ' + esc(p.card.treat) : ''} · ${money(cardPrice(p.card, p.foil))}</div>
+          <div class="muted small">${rarityText(p.card)}${p.card.treat ? ' · ' + esc(p.card.treat) : ''} · ${money(cardPrice(p.card, p.foil))}</div>
         </div>`;
       const flip = wrap.querySelector('.flip');
       // Hold rares/mythics a moment longer for suspense.
@@ -848,6 +925,12 @@
   /** 🎲 A regular pack from a random set, for 50 points. */
   async function ripRandom(tries) {
     if (state.points < RANDOM_COST) return toast(`You need ${RANDOM_COST} ◆ for a random pack`);
+    if (game === 'pokemon') {
+      if (!pkSets) await loadPokemonSets();
+      if (!pkSets || !pkSets.length) return toast("Couldn't load Pokémon sets. Check your connection.");
+      const ps = pkSets[Math.floor(Math.random() * pkSets.length)];
+      return ripPack(ps, 'pokemon', null, { cost: RANDOM_COST, random: true, tries: tries || 0 });
+    }
     if (!sets) await loadSets();
     if (!sets || !sets.length) return toast("Couldn't load the set list. Check your connection.");
     // Roll the pack type first, so 1 in 5 random packs really is a Collector Booster.
@@ -860,14 +943,33 @@
   $('#openRandom').addEventListener('click', () => ripRandom());
 
   const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+  const rarityText = (c) => c.rarityLabel || cap(c.rarity);
 
   // ---------- collection ----------
   function entries() {
     return Object.values(state.collection);
   }
 
+  let folder = 'all';
+  document.querySelectorAll('#collFolders button').forEach(
+    (b) =>
+      (b.onclick = () => {
+        folder = b.dataset.folder;
+        document.querySelectorAll('#collFolders button').forEach((x) => x.classList.toggle('on', x === b));
+        renderCollection();
+      })
+  );
+  const gameOf = (c) => c.game || 'magic';
+
   function renderCollection() {
-    const all = entries();
+    const everything = entries();
+    const counts = { all: everything.length, magic: 0, pokemon: 0 };
+    everything.forEach((e) => counts[gameOf(e.card)]++);
+    document.querySelectorAll('#collFolders button').forEach((b) => {
+      const n = b.querySelector('small');
+      if (n) n.textContent = counts[b.dataset.folder];
+    });
+    const all = folder === 'all' ? everything : everything.filter((e) => gameOf(e.card) === folder);
     const uniq = all.length;
     const total = all.reduce((s, e) => s + e.n + e.f, 0);
     const value = all.reduce((s, e) => s + e.n * cardPrice(e.card, false) + e.f * cardPrice(e.card, true), 0);
@@ -875,7 +977,7 @@
       <div><b>${fmt(total)}</b><small>cards</small></div>
       <div><b>${fmt(uniq)}</b><small>unique</small></div>
       <div><b>${money(value)}</b><small>value</small></div>
-      <div><b>${fmt(state.packsOpened)}</b><small>packs</small></div>`;
+      <div><b>${fmt(folder === 'all' ? state.packsOpened : state.history.filter((h) => (h.game || 'magic') === folder).length)}</b><small>${folder === 'all' ? 'packs' : 'recent packs'}</small></div>`;
 
     // Set filter options
     const setSel = $('#collSet');
@@ -953,14 +1055,14 @@
       </div>
       <h3>${esc(c.name)}</h3>
       <p class="muted">${esc(c.type || '')}</p>
-      <p><span class="rarity-dot ${c.rarity}"></span>${cap(c.rarity)}${c.treat ? ' · ' + esc(c.treat) : ''} · ${esc(c.setName)} #${esc(c.num)}</p>
+      <p><span class="rarity-dot ${c.rarity}"></span>${rarityText(c)}${c.treat ? ' · ' + esc(c.treat) : ''} · ${esc(c.setName)} #${esc(c.num)}</p>
       <table class="odds">
         <tr><td>Regular</td><td>×${e.n} · ${money(c.usd)} each</td></tr>
         <tr><td>Foil</td><td>×${e.f} · ${money(c.usdFoil)} each</td></tr>
       </table>
-      <p class="muted small">Prices from Scryfall (TCGplayer market), updated when the set was loaded.</p>
+      <p class="muted small">${c.game === 'pokemon' ? 'Prices from TCGplayer (via TCGdex), checked when the pack was opened.' : 'Prices from Scryfall (TCGplayer market), updated when the set was loaded.'}</p>
       <div class="row center">
-        <a class="btn" href="${esc(c.uri)}" target="_blank" rel="noopener">View on Scryfall</a>
+        ${c.uri ? `<a class="btn" href="${esc(c.uri)}" target="_blank" rel="noopener">View on ${c.game === 'pokemon' ? 'TCGplayer' : 'Scryfall'}</a>` : ''}
         <button class="btn primary" id="closeCard">Close</button>
       </div>`;
     m.classList.remove('hidden');
@@ -1037,6 +1139,7 @@
   };
 
   renderPoints();
+  setTimeout(() => game !== 'magic' && setGame(game), 0); // restore the last chosen card game
   if (state.taskBackpay) {
     const n = state.taskBackpay;
     delete state.taskBackpay;

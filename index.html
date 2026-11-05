@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
   <header class="topbar">
@@ -66,14 +66,18 @@
         <button class="btn wide" id="checkinBtn">Claim daily bonus</button>
         <p class="muted small" id="streakText"></p>
       </div>
-      <p class="muted small center-text">Pack Ripped · version 16</p>
+      <p class="muted small center-text">Pack Ripped · version 17</p>
     </section>
 
     <!-- OPEN -->
     <section id="view-open" class="view">
+      <div class="seg game-switch" id="gameSwitch">
+        <button data-game="magic" class="on">Magic</button>
+        <button data-game="pokemon">Pokémon</button>
+      </div>
       <button class="pw-entry random-entry" id="openRandom">
         <span class="pw-entry-icon">🎲</span>
-        <span><b>Random pack · 50 ◆</b><small>A surprise set. 1 in 5 is a Collector Booster!</small></span>
+        <span><b>Random pack · 50 ◆</b><small id="randomSub">A surprise set. 1 in 5 is a Collector Booster!</small></span>
         <span class="chev">›</span>
       </button>
       <button class="pw-entry" id="openPackWars">
@@ -93,6 +97,11 @@
 
     <!-- COLLECTION -->
     <section id="view-collection" class="view">
+      <div class="seg folders" id="collFolders">
+        <button data-folder="all" class="on">All <small>0</small></button>
+        <button data-folder="magic">Magic <small>0</small></button>
+        <button data-folder="pokemon">Pokémon <small>0</small></button>
+      </div>
       <div class="card-panel">
         <div class="stats-row" id="collStats"></div>
         <div class="filters">
@@ -168,16 +177,17 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script src="odds.js?v=16"></script>
-  <script src="commander.js?v=16"></script>
-  <script src="app.js?v=16"></script>
-  <script src="decks.js?v=16"></script>
-  <script src="config.js?v=16"></script>
-  <script src="vendor/supabase-2.119.0.js?v=16"></script>
-  <script src="social.js?v=16"></script>
-  <script src="trades.js?v=16"></script>
-  <script src="packwars-engine.js?v=16"></script>
-  <script src="packwars.js?v=16"></script>
+  <script src="odds.js?v=17"></script>
+  <script src="pokemon.js?v=17"></script>
+  <script src="commander.js?v=17"></script>
+  <script src="app.js?v=17"></script>
+  <script src="decks.js?v=17"></script>
+  <script src="config.js?v=17"></script>
+  <script src="vendor/supabase-2.119.0.js?v=17"></script>
+  <script src="social.js?v=17"></script>
+  <script src="trades.js?v=17"></script>
+  <script src="packwars-engine.js?v=17"></script>
+  <script src="packwars.js?v=17"></script>
   <script>document.getElementById('openPackWars').onclick = () => window.PR.showView('packwars');</script>
 </body>
 </html>

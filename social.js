@@ -62,6 +62,7 @@
         card: {
           id: c.id, name: c.name, set: c.set, setName: c.setName, num: c.num, rarity: c.rarity, type: c.type,
           front: c.front, img: c.img, usd: c.usd, usdFoil: c.usdFoil, treat: c.treat, ci: c.ci, cmc: c.cmc, mana: c.mana,
+          game: c.game, rarityLabel: c.rarityLabel, uri: c.uri,
         },
       };
       cards += e.n + e.f;

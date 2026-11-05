@@ -40,7 +40,10 @@ added to your collection.
   draw, play, tap, counters, graveyard, exile, London mulligan, life, turns and
   a game log. Play online against a friend (needs the Friends server) or with
   two players on one phone. The app doesn't enforce Magic's rules.
-- **Collection** with copies, foils, market prices, filters, and pack history.
+- **Pokémon packs**: switch the Open tab to Pokémon to rip modern booster packs
+  (Sword & Shield, Scarlet & Violet, Mega Evolution) with approximate community
+  pull rates, card data from [TCGdex](https://tcgdex.dev) and TCGplayer prices.
+- **Collection** with Magic / Pokémon folders, copies, foils, market prices, filters, and pack history.
 - Installable on your phone's home screen. Backup and restore by copy/paste.
 
 ## Run it
@@ -51,5 +54,6 @@ Deploy from a branch → `main` / root), or serve the folder locally:
 python3 -m http.server 8000
 ```
 
-Card data and images © Wizards of the Coast, provided by Scryfall. This is an
-unofficial fan project. It is not affiliated with or endorsed by Wizards of the Coast.
+Magic card data and images © Wizards of the Coast, provided by Scryfall. Pokémon card
+data and images © The Pokémon Company / Nintendo / Creatures / GAME FREAK, provided by
+TCGdex. This is an unofficial fan project, not affiliated with or endorsed by any of them.
