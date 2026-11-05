@@ -196,12 +196,36 @@
       tone(a, t, f * 2.76, 0.07, bright ? 0.022 : 0.015, 'sine'); // faint metallic overtone
     },
 
+    /** A soft, dry click (like a camera shutter or a card-scanner tap): for cheap cards. */
+    click() {
+      const a = audio();
+      if (!a) return;
+      const t = a.currentTime + 0.005;
+      // ~12 ms of filtered noise with a very fast decay...
+      const len = Math.floor(a.sampleRate * 0.012);
+      const buf = a.createBuffer(1, len, a.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+      const src = a.createBufferSource();
+      src.buffer = buf;
+      const f = a.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.value = 3200;
+      f.Q.value = 0.9;
+      const g = a.createGain();
+      g.gain.value = 0.35;
+      src.connect(f).connect(g).connect(a.destination);
+      src.start(t);
+      // ...plus a tiny, quiet tick to give it a little body.
+      tone(a, t, 1900, 0.02, 0.03, 'sine');
+    },
+
     forCard(card, price) {
       const tier = api.tier(card, price);
       if (tier === 'huge') api.dings();
       else if (tier === 'big') api.coin();
       else if (tier === 'nice') api.ching(true);
-      else api.ching(false);
+      else api.click();
       return tier;
     },
 
