@@ -1,5 +1,5 @@
 // Offline support: cache the app shell. Card data and images always come from the network.
-const CACHE = 'packripped-v7';
+const CACHE = 'packripped-v8';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'odds.js', 'commander.js', 'decks.js', 'config.js', 'social.js', 'vendor/supabase-2.119.0.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
@@ -17,7 +17,8 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
   e.respondWith(
-    fetch(e.request)
+    // no-cache: always ask the server for the newest file (cheap when nothing changed)
+    fetch(e.request, { cache: 'no-cache' })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));
