@@ -60,6 +60,57 @@
         ["Galactic Glow Dream Drop", 'super', 'ball', "https://cdn.shopify.com/s/files/1/0628/9886/4365/files/czki95otooue3r6eiceq.jpg?v=1775522245&width=500"],
       ],
     },
+    {
+      name: 'Squeezies', match: ['squeez'], style: 'bag',
+      // Toymendous Laffy Quacks / Laffy Snacks and ORB Easy Sqweezy (photos from ToyWiz).
+      items: [
+        ["Easy Sqweezy Mega Banana", 'common', 'blob', "https://cdn11.bigcommerce.com/s-0kvv9/products/556917/images/843523/622222424107__41890.1765733247.500.750.jpg?c=2"],
+        ["Easy Sqweezy Jumbo Banana", 'super', 'blob', "https://cdn11.bigcommerce.com/s-0kvv9/products/572400/images/868390/622222424060__50028.1770399565.500.750.jpg?c=2"],
+        ["Easy Sqweezy Pickle", 'common', 'blob', "https://cdn11.bigcommerce.com/s-0kvv9/products/556896/images/843477/622222424077__89881.1757971857.500.750.jpg?c=2"],
+        ["Easy Sqweezy Puppy", 'common', 'blob', "https://cdn11.bigcommerce.com/s-0kvv9/products/564793/images/855925/622222177775__70769.1774893934.500.750.jpg?c=2"],
+        ["Easy Sqweezy Super Cheesy", 'rare', 'blob', "https://cdn11.bigcommerce.com/s-0kvv9/products/483090/images/748925/622222421182__38194.1717447653.500.750.jpg?c=2"],
+        ["Laffy Quacks Jumbo Duck (Blue)", 'common', 'drop', "https://cdn11.bigcommerce.com/s-0kvv9/products/579390/images/877612/840359705092blue__48255.1774278225.500.750.jpg?c=2"],
+        ["Laffy Quacks Jumbo Duck (Green)", 'common', 'drop', "https://cdn11.bigcommerce.com/s-0kvv9/products/579388/images/877608/840359705092gre__65047.1774278225.500.750.jpg?c=2"],
+        ["Laffy Quacks Jumbo Duck (Pink)", 'common', 'drop', "https://cdn11.bigcommerce.com/s-0kvv9/products/579831/images/878044/840359705092pnk__77863.1774366371.500.750.jpg?c=2"],
+        ["Laffy Quacks Jumbo Duck (Red)", 'common', 'drop', "https://cdn11.bigcommerce.com/s-0kvv9/products/590669/images/893855/840359712250__39513.1780498519.500.750.jpg?c=2"],
+        ["Laffy Quacks Jumbo Duck (Tie-Dye Blue)", 'rare', 'drop', "https://cdn11.bigcommerce.com/s-0kvv9/products/587505/images/888929/840359713714__22180.1778602249.500.750.jpg?c=2"],
+        ["Laffy Quacks Jumbo Duck (Tie-Dye Green)", 'rare', 'drop', "https://cdn11.bigcommerce.com/s-0kvv9/products/587502/images/888922/840359713721__43302.1778608350.500.750.jpg?c=2"],
+        ["Laffy Quacks Jumbo Duck (Tie-Dye Pink)", 'rare', 'drop', "https://cdn11.bigcommerce.com/s-0kvv9/products/587503/images/888925/840359713707__05867.1778608350.500.750.jpg?c=2"],
+        ["Laffy Quacks Jumbo Duck (Tie-Dye Yellow)", 'rare', 'drop', "https://cdn11.bigcommerce.com/s-0kvv9/products/587504/images/888927/840359713738__97483.1778608350.500.750.jpg?c=2"],
+        ["Laffy Quacks Jumbo Duck (White)", 'common', 'drop', "https://cdn11.bigcommerce.com/s-0kvv9/products/590640/images/893777/840359712274__22586.1780442407.500.750.jpg?c=2"],
+        ["Laffy Quacks Jumbo Duck (Yellow)", 'common', 'drop', "https://cdn11.bigcommerce.com/s-0kvv9/products/579389/images/877611/840359705092yel__30811.1774271713.500.750.jpg?c=2"],
+        ["Laffy Snacks Hot Dog", 'common', 'blob', "https://cdn11.bigcommerce.com/s-0kvv9/products/587348/images/888648/840359712359__46065.1778514020.500.750.jpg?c=2"],
+        ["Laffy Snacks Jumbo Butter", 'super', 'cube', "https://cdn11.bigcommerce.com/s-0kvv9/products/576581/images/873550/840359707874__47651.1772477513.500.750.jpg?c=2"],
+        ["Laffy Snacks Jumbo Banana", 'rare', 'blob', "https://cdn11.bigcommerce.com/s-0kvv9/products/576582/images/873553/840359704019__29008.1772477513.500.750.jpg?c=2"],
+      ],
+    },
+    {
+      name: 'Jellycat', match: ['jellycat'], style: 'bag',
+      // Photos from Pacifier Kids. Bartholomew Bear and the Bashful Bunny are Jellycat's best-known classics.
+      items: [
+        ["Amuseables Molasi Cookie", 'common', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-10-01T091826.045.jpg?v=1791323386&width=500"],
+        ["Amuseables Pinecone Tree", 'common', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-10-01T092831.024.jpg?v=1791323340&width=500"],
+        ["Amuseables Garlic", 'common', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-08-12T201732.312.jpg?v=1786537067&width=500"],
+        ["Amuseables Pomilly", 'common', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-09-04T200014.682.jpg?v=1788523234&width=500"],
+        ["Amuseables Fitswell Mitten", 'common', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-09-04T195011.683.jpg?v=1788522700&width=500"],
+        ["Amuseables Perta Snow Boot", 'common', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-09-04T200935.745.jpg?v=1788523817&width=500"],
+        ["Amuseables Mullover Spiced Drink", 'common', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-09-04T195641.907.jpg?v=1788523021&width=500"],
+        ["Amuseables Scarffles Hot Chocolate", 'common', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-10-01T094224.032.jpg?v=1790818976&width=500"],
+        ["Amuseables Vampop Drink", 'common', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-08-12T202715.480.jpg?v=1786537650&width=500"],
+        ["Amuseables Flickerty Candle", 'common', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-08-12T201318.370.jpg?v=1786536819&width=500"],
+        ["Ghost Bob", 'common', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-08-12T203049.334.jpg?v=1786537871&width=500"],
+        ["Birchly Moose", 'rare', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-10-01T101742.042.jpg?v=1791322425&width=500"],
+        ["Ulrich Wolf", 'rare', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-09-04T204146.791.jpg?v=1788525723&width=500"],
+        ["Tawoola Owl", 'rare', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-09-04T203417.811.jpg?v=1788525274&width=500"],
+        ["Growlston Gargoyle", 'rare', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-08-12T203422.424.jpg?v=1786538073&width=500"],
+        ["Franilla Luxe Bunny", 'rare', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-10-01T102859.035.jpg?v=1791322397&width=500"],
+        ["Amuseables Silver Star (2026)", 'rare', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-09-04T201554.713.jpg?v=1788524176&width=500"],
+        ["Amuseables Collette Tarte Au Citron", 'rare', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_5_d30ee980-f1db-4695-a169-6ddabad6bb8c.jpg?v=1791870305&width=500"],
+        ["Bizzlestomp Bear", 'super', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-09-04T202122.194.jpg?v=1788524634&width=500"],
+        ["Ooky Jack O Lantern", 'super', 'blob', "https://cdn.shopify.com/s/files/1/0281/8056/files/OOK3JOL_4__23668.1752688236.jpg?v=1786636376&width=500"],
+      ],
+      named: [['Bartholomew Bear', 'super', 'ball'], ['Bashful Bunny', 'rare', 'ball']],
+    },
   ];
   // Names from the first starter list (kept for reference; nothing is removed anymore).
   const OLD_CATALOG = ['Sherbet Dumpling', 'Neon Dumpling', 'Shark Dumpling', 'Seashell Dumpling', 'Sunset Dumpling',
@@ -72,7 +123,8 @@
   function data() {
     const s = PR.state;
     if (!s.squish) s.squish = { bagCost: 50, brands: [] };
-    if (!s.squish.catalogV3) {
+    const CATALOG_VER = 4;
+    if ((s.squish.catalogVer || 0) < CATALOG_VER) {
       for (const c of CATALOG) {
         let b = s.squish.brands.find((x) => c.match.some((m) => x.name.toLowerCase().replace(/[^a-z ]/g, '').startsWith(m.replace(/[^a-z ]/g, ''))));
         if (!b) s.squish.brands.push((b = { id: uid(), name: c.name, items: [] }));
@@ -88,6 +140,7 @@
         for (const [name, rarity, shape] of c.named || [])
           if (!b.items.some((i) => i.name.toLowerCase() === name.toLowerCase())) b.items.push({ id: uid(), name, rarity, shape });
       }
+      s.squish.catalogVer = CATALOG_VER;
       s.squish.catalogV3 = true;
       s.squish.catalogV2 = true;
       s.squish.catalogV1 = true;
