@@ -791,6 +791,7 @@
     pack.onclick = async () => {
       pack.onclick = null;
       pack.classList.add('ripping');
+      if (window.PRSound) window.PRSound.shake(); // coins rattling as the pack tears
       if (navigator.vibrate) navigator.vibrate(30);
       await sleep(650);
       if (ripBlind && ripDone) {
@@ -843,6 +844,7 @@
       requestAnimationFrame(() =>
         setTimeout(() => {
           flip.classList.add('flipped');
+          if (window.PRSound) window.PRSound.forCard(p.card, cardPrice(p.card, p.foil)); // ka-ching / dings for good cards
           if (big && navigator.vibrate) navigator.vibrate(p.card.rarity === 'mythic' ? [40, 60, 80] : 40);
           setTimeout(() => (wrap.querySelector('.pull-info').style.visibility = 'visible'), 300);
         }, big ? 450 : 60)
@@ -857,7 +859,15 @@
     };
     wrap.onclick = next;
     $('#revHint').onclick = next;
-    $('#revAll').onclick = () => showSummary(set, pulls, value, type);
+    $('#revAll').onclick = () => {
+      // Skipping ahead: still celebrate the best card you hadn't seen yet.
+      const rest = pulls.slice(i + 1);
+      if (rest.length && window.PRSound) {
+        const best = bestPull(rest);
+        window.PRSound.forCard(best.card, cardPrice(best.card, best.foil));
+      }
+      showSummary(set, pulls, value, type);
+    };
     showOne();
   }
 
@@ -1146,6 +1156,15 @@
   };
 
   renderPoints();
+  const soundBtn = $('#soundBtn');
+  const paintSound = () => (soundBtn.textContent = window.PRSound && window.PRSound.enabled ? '🔊' : '🔇');
+  soundBtn.onclick = () => {
+    if (!window.PRSound) return;
+    const on = window.PRSound.toggle();
+    paintSound();
+    toast(on ? 'Sounds on' : 'Sounds off');
+  };
+  window.addEventListener('load', paintSound);
   // Restore the last chosen card game once every script (Pokémon, Squishies) has loaded.
   window.addEventListener('load', () => game !== 'magic' && setGame(game));
   if (state.taskBackpay) {

@@ -120,11 +120,13 @@
         document.getElementById('sqBag').onclick = () => {
           const bag = document.getElementById('sqBag');
           bag.classList.add('opening');
+          if (window.PRSound) window.PRSound.shake();
           if (navigator.vibrate) navigator.vibrate(item.rarity === 'super' ? [40, 60, 80] : 25);
           setTimeout(() => {
             bag.remove();
             document.getElementById('sqHint').remove();
             document.getElementById('sqReveal').classList.remove('hidden');
+            if (window.PRSound) window.PRSound.forCard(card, 0);
           }, 550);
         };
         document.getElementById('sqDone').onclick = () => {
