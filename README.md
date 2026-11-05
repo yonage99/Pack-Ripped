@@ -43,7 +43,10 @@ added to your collection.
 - **Pokémon packs**: switch the Open tab to Pokémon to rip modern booster packs
   (Sword & Shield, Scarlet & Violet, Mega Evolution) with approximate community
   pull rates, card data from [TCGdex](https://tcgdex.dev) and TCGplayer prices.
-- **Collection** with Magic / Pokémon folders, copies, foils, market prices, filters, and pack history.
+- **Squishies** (real brands, names only): keep your own list of brands and items
+  (starts with Nee-Doh and RMS), each with a rarity, and open 50-point blind bags
+  (common 70%, rare 25%, super rare 5%). Simple stand-in pictures, no official photos.
+- **Collection** with Magic / Pokémon / Squishies folders, copies, foils, market prices, filters, and pack history.
 - Installable on your phone's home screen. Backup and restore by copy/paste.
 
 ## Run it

@@ -473,3 +473,24 @@ small.block { display: block; font-weight: 500; font-size: 12px; margin-top: 2px
 .pack.pokemon .pack-body img.pk-logo { width: 160px; height: auto; max-height: 90px; }
 .pack.pokemon .pack-type { color: #ffde59; }
 .set-icon.pk { width: 56px; height: 32px; }
+
+/* Squishies */
+.folders button { font-size: 13px; padding: 8px 2px; }
+.sq-strip { display: flex; gap: 6px; overflow-x: auto; margin: 6px 0 10px; }
+.sq-strip img { width: 54px; border-radius: 6px; flex: none; }
+.sq-strip img.unowned { opacity: 0.35; filter: grayscale(0.7); }
+.sq-items { list-style: none; padding: 0; margin: 6px 0; }
+.sq-items li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #2c2544; }
+.sq-items li span { flex: 1; }
+.sq-items select { width: auto; padding: 6px; font-size: 13px; }
+.squish-brand .add-task { grid-template-columns: 1fr 110px auto; }
+.squish-big { width: 160px; margin: 0 auto; cursor: default; }
+.bag { width: 150px; height: 190px; margin: 10px auto; cursor: pointer; animation: wobble 1.6s ease-in-out infinite; }
+@keyframes wobble { 25% { transform: rotate(-4deg) scale(1.02); } 75% { transform: rotate(4deg) scale(0.98); } }
+.bag-top { height: 24px; border-radius: 10px 10px 0 0; background: repeating-linear-gradient(90deg, #ff9ecb 0 6px, #e874ad 6px 12px); }
+.bag-body {
+  height: calc(100% - 24px); border-radius: 0 0 26px 26px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 30% 25%, #ffd1e8, #b06ad9 70%); color: #2a1440; gap: 4px;
+}
+.bag-body span { font-size: 54px; font-weight: 900; }
+.bag.opening { animation: none; transform: scale(1.25); opacity: 0; transition: all 0.5s; }

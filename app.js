@@ -424,6 +424,12 @@
     try { localStorage.setItem('packripped:game', g); } catch {}
     document.querySelectorAll('#gameSwitch button').forEach((b) => b.classList.toggle('on', b.dataset.game === g));
     $('#openPackWars').classList.toggle('hidden', g !== 'magic');
+    // Squishies have their own screen instead of a set list.
+    const squish = g === 'squishy';
+    $('#openRandom').classList.toggle('hidden', squish);
+    $('#setPanel').classList.toggle('hidden', squish);
+    $('#squishRoot').classList.toggle('hidden', !squish);
+    if (squish) return window.PRSquish && window.PRSquish.render();
     $('#randomSub').textContent = g === 'pokemon' ? 'A surprise Pokémon set' : 'A surprise set. 1 in 5 is a Collector Booster!';
     $('#setSearch').value = '';
     loadSets();
@@ -447,6 +453,7 @@
 
   async function loadSets() {
     renderPoints();
+    if (game === 'squishy') return window.PRSquish && window.PRSquish.render();
     if (game === 'pokemon') return loadPokemonSets();
     if (sets) return renderSets();
     const cached = lsGet(SETS_KEY);
@@ -963,7 +970,7 @@
 
   function renderCollection() {
     const everything = entries();
-    const counts = { all: everything.length, magic: 0, pokemon: 0 };
+    const counts = { all: everything.length, magic: 0, pokemon: 0, squishy: 0 };
     everything.forEach((e) => counts[gameOf(e.card)]++);
     document.querySelectorAll('#collFolders button').forEach((b) => {
       const n = b.querySelector('small');
@@ -1055,12 +1062,12 @@
       </div>
       <h3>${esc(c.name)}</h3>
       <p class="muted">${esc(c.type || '')}</p>
-      <p><span class="rarity-dot ${c.rarity}"></span>${rarityText(c)}${c.treat ? ' · ' + esc(c.treat) : ''} · ${esc(c.setName)} #${esc(c.num)}</p>
+      <p><span class="rarity-dot ${c.rarity}"></span>${rarityText(c)}${c.treat ? ' · ' + esc(c.treat) : ''} · ${esc(c.setName)}${c.num ? ' #' + esc(c.num) : ''}</p>
       <table class="odds">
         <tr><td>Regular</td><td>×${e.n} · ${money(c.usd)} each</td></tr>
         <tr><td>Foil</td><td>×${e.f} · ${money(c.usdFoil)} each</td></tr>
       </table>
-      <p class="muted small">${c.game === 'pokemon' ? 'Prices from TCGplayer (via TCGdex), checked when the pack was opened.' : 'Prices from Scryfall (TCGplayer market), updated when the set was loaded.'}</p>
+      <p class="muted small">${c.game === 'squishy' ? 'Squishies are entered by name only, so they have no prices.' : c.game === 'pokemon' ? 'Prices from TCGplayer (via TCGdex), checked when the pack was opened.' : 'Prices from Scryfall (TCGplayer market), updated when the set was loaded.'}</p>
       <div class="row center">
         ${c.uri ? `<a class="btn" href="${esc(c.uri)}" target="_blank" rel="noopener">View on ${c.game === 'pokemon' ? 'TCGplayer' : 'Scryfall'}</a>` : ''}
         <button class="btn primary" id="closeCard">Close</button>
@@ -1139,7 +1146,8 @@
   };
 
   renderPoints();
-  setTimeout(() => game !== 'magic' && setGame(game), 0); // restore the last chosen card game
+  // Restore the last chosen card game once every script (Pokémon, Squishies) has loaded.
+  window.addEventListener('load', () => game !== 'magic' && setGame(game));
   if (state.taskBackpay) {
     const n = state.taskBackpay;
     delete state.taskBackpay;

@@ -41,7 +41,7 @@
       if (delta <= 0) return;
       // Card details travel with the trade; Commander info is refreshed from Scryfall later.
       const fresh = { ...(card || {}), id };
-      if (fresh.game !== 'pokemon') delete fresh.ci; // Magic: refresh Commander info from Scryfall
+      if ((fresh.game || 'magic') === 'magic') delete fresh.ci; // Magic: refresh Commander info from Scryfall
       e = c[id] = { n: 0, f: 0, firstAt: Date.now(), card: fresh };
     }
     const k = foil ? 'f' : 'n';

@@ -29,7 +29,7 @@
     const best = {};
     for (const e of Object.values(PR.state.collection)) {
       const c = e.card;
-      if (c.game === 'pokemon') continue; // Commander decks use Magic cards only
+      if ((c.game || 'magic') !== 'magic') continue; // Commander decks use Magic cards only
       const v = Math.max(e.n ? cardPrice(c, false) : 0, e.f ? cardPrice(c, true) : 0);
       if (!best[c.name] || v > best[c.name].v) best[c.name] = { card: c, v, foil: !!e.f && (!e.n || cardPrice(c, true) >= cardPrice(c, false)) };
     }
@@ -58,7 +58,7 @@
   // Older saves don't have Commander info on their cards. Fetch it from Scryfall in batches.
   let backfill = null;
   function ensureCardData() {
-    const missing = Object.values(PR.state.collection).filter((e) => e.card.ci === undefined && e.card.game !== 'pokemon');
+    const missing = Object.values(PR.state.collection).filter((e) => e.card.ci === undefined && (e.card.game || 'magic') === 'magic');
     if (!missing.length) return Promise.resolve(true);
     if (backfill) return backfill;
     backfill = (async () => {
@@ -117,11 +117,11 @@
   function render() {
     const r = root();
     if (!r) return;
-    const needs = Object.values(PR.state.collection).some((e) => e.card.ci === undefined && e.card.game !== 'pokemon');
+    const needs = Object.values(PR.state.collection).some((e) => e.card.ci === undefined && (e.card.game || 'magic') === 'magic');
     if (needs) {
       r.innerHTML = `<div class="card-panel"><div class="spinner"></div><p class="muted center-text">Getting deck info for your cards…</p></div>`;
       ensureCardData().then((ok) => {
-        if (ok && !Object.values(PR.state.collection).some((e) => e.card.ci === undefined && e.card.game !== 'pokemon')) return render();
+        if (ok && !Object.values(PR.state.collection).some((e) => e.card.ci === undefined && (e.card.game || 'magic') === 'magic')) return render();
         r.innerHTML = `<div class="card-panel"><p>Couldn't load card info. Check your connection.</p>
           <button class="btn" id="dkRetry">Retry</button></div>`;
         document.getElementById('dkRetry').onclick = render;
