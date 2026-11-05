@@ -59,6 +59,7 @@
   let state = Object.assign(defaultState(), lsGet(STORE_KEY) || {});
   const save = () => {
     if (!lsSet(STORE_KEY, state)) toast('Storage is full. Copy a backup!');
+    try { window.PR && window.PR.onSave && window.PR.onSave(); } catch {}
   };
 
   const costFor = (type) => (type === 'collector' ? state.collectorCost : state.packCost);
@@ -109,6 +110,7 @@
     if (v === 'collection') renderCollection();
     if (v === 'earn') renderEarn();
     if (v === 'decks') window.PRDecks && window.PRDecks.render();
+    if (v === 'friends') window.PRSocial && window.PRSocial.render();
     window.scrollTo(0, 0);
   }
 

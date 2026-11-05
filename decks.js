@@ -695,5 +695,5 @@
     );
   }
 
-  window.PRDecks = { render };
+  window.PRDecks = { render, ensureCardData };
 })();

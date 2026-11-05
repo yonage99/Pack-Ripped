@@ -23,6 +23,10 @@ added to your collection.
   plus unlimited basic lands (Plains, Island, Swamp, Mountain, Forest, Wastes).
   Checks commander eligibility, partners/Backgrounds, color identity,
   singleton, and the Commander ban list. Export to Moxfield in one tap: it copies the list (with your exact printings and foils) and opens Moxfield so you can paste it in.
+- **Friends & steps leaderboard** (optional, needs a free Supabase project, see
+  [SETUP-FRIENDS.md](SETUP-FRIENDS.md)): sign up with a username, add friends,
+  browse each other's collections and decks, and compete on steps today, this
+  week, or all time.
 - **Collection** with copies, foils, market prices, filters, and pack history.
 - Installable on your phone's home screen. Backup and restore by copy/paste.
 
