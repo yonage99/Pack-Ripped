@@ -24,6 +24,7 @@
     { id: 't10', name: 'Learn with Sruli', points: 1000 },
     { id: 't11', name: 'Go to Seder', points: 1000 },
     { id: 't12', name: 'Go to Mariv', points: 1000 },
+    { id: 't13', name: 'Shmira', points: 5000 },
   ];
   const OLD_TASK_POINTS = { t1: 50, t2: 20, t3: 30, t4: 20, t5: 10 };
   const MAX_TASK_POINTS = 5000;
@@ -89,12 +90,21 @@
       }
       const have = new Set((s.tasks || []).map((x) => x.name.trim().toLowerCase()));
       for (const d of DEFAULT_TASKS)
-        if (!OLD_TASK_POINTS[d.id] && !have.has(d.name.toLowerCase()) && !(s.tasks || []).some((x) => x.id === d.id))
+        if (!OLD_TASK_POINTS[d.id] && d.id !== 't13' && !have.has(d.name.toLowerCase()) && !(s.tasks || []).some((x) => x.id === d.id))
           s.tasks.push({ ...d, doneOn: null });
       if (backpay) s.taskBackpay = (s.taskBackpay || 0) + backpay;
     }
     s.tasksV2 = true;
+    // Task update 3: Shmira.
+    if (saved && !saved.tasksV3) addMissingTasks(s, ['t13']);
+    s.tasksV3 = true;
     return s;
+  }
+
+  function addMissingTasks(s, ids) {
+    const have = new Set((s.tasks || []).map((x) => x.name.trim().toLowerCase()));
+    for (const d of DEFAULT_TASKS)
+      if (ids.includes(d.id) && !have.has(d.name.toLowerCase()) && !s.tasks.some((x) => x.id === d.id)) s.tasks.push({ ...d, doneOn: null });
   }
 
   const savedState = lsGet(STORE_KEY);
