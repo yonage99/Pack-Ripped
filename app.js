@@ -12,12 +12,21 @@
   const RARITY_ORDER = { mythic: 4, rare: 3, uncommon: 2, common: 1 };
 
   const DEFAULT_TASKS = [
-    { id: 't1', name: 'Workout 30 minutes', points: 50 },
-    { id: 't2', name: 'Drink 8 glasses of water', points: 20 },
-    { id: 't3', name: 'Read 20 minutes', points: 30 },
-    { id: 't4', name: 'Meditate 10 minutes', points: 20 },
-    { id: 't5', name: 'Make your bed', points: 10 },
+    { id: 't1', name: 'Workout 30 minutes', points: 500 },
+    { id: 't2', name: 'Drink 8 glasses of water', points: 200 },
+    { id: 't3', name: 'Read 20 minutes', points: 300 },
+    { id: 't4', name: 'Meditate 10 minutes', points: 200 },
+    { id: 't5', name: 'Make your bed', points: 100 },
+    { id: 't6', name: 'Go to Shachris', points: 1000 },
+    { id: 't7', name: 'Learn Mesilas Yesharim', points: 1000 },
+    { id: 't8', name: 'Learn with Meyer', points: 1000 },
+    { id: 't9', name: 'Go to Mincha', points: 1000 },
+    { id: 't10', name: 'Learn with Sruli', points: 1000 },
+    { id: 't11', name: 'Go to Seder', points: 1000 },
+    { id: 't12', name: 'Go to Mariv', points: 1000 },
   ];
+  const OLD_TASK_POINTS = { t1: 50, t2: 20, t3: 30, t4: 20, t5: 10 };
+  const MAX_TASK_POINTS = 5000;
 
   // ---------- helpers ----------
   const $ = (s) => document.querySelector(s);
@@ -61,15 +70,35 @@
   // Saves from before the rate changed used 100 steps per point. Switch them to 10.
   // steps.credited counts points already paid for today's steps, so keeping it as-is
   // back-pays today's steps at the new rate (minus what was already paid) on next load.
-  function migrate(s) {
+  function migrate(s, saved) {
     if (s.stepsPerPoint === 100) {
       s.stepsPerPoint = 10;
       s.rateBackpay = true;
     }
+    // Task update 2: built-in tasks are worth 10x, plus the new daily tasks. Tasks you
+    // already finished today get the difference; tasks you edited or added are left alone.
+    if (saved && !saved.tasksV2) {
+      const t = today();
+      let backpay = 0;
+      for (const task of s.tasks || []) {
+        if (OLD_TASK_POINTS[task.id] && task.points === OLD_TASK_POINTS[task.id]) {
+          const pts = task.points * 10;
+          if (task.doneOn === t) backpay += pts - task.points;
+          task.points = pts;
+        }
+      }
+      const have = new Set((s.tasks || []).map((x) => x.name.trim().toLowerCase()));
+      for (const d of DEFAULT_TASKS)
+        if (!OLD_TASK_POINTS[d.id] && !have.has(d.name.toLowerCase()) && !(s.tasks || []).some((x) => x.id === d.id))
+          s.tasks.push({ ...d, doneOn: null });
+      if (backpay) s.taskBackpay = (s.taskBackpay || 0) + backpay;
+    }
+    s.tasksV2 = true;
     return s;
   }
 
-  let state = migrate(Object.assign(defaultState(), lsGet(STORE_KEY) || {}));
+  const savedState = lsGet(STORE_KEY);
+  let state = migrate(Object.assign(defaultState(), savedState || {}), savedState);
   const save = () => {
     if (!lsSet(STORE_KEY, state)) toast('Storage is full. Copy a backup!');
     try { window.PR && window.PR.onSave && window.PR.onSave(); } catch {}
@@ -266,8 +295,8 @@
         const done = task.doneOn === t;
         return `<li class="task ${done ? 'done' : ''}" data-id="${esc(task.id)}">
           <button class="task-check" ${done ? 'disabled' : ''} aria-label="Complete">${done ? '✓' : ''}</button>
-          <span class="task-name">${esc(task.name)}</span>
-          <span class="task-pts">+${task.points}</span>
+          <span class="task-name">${esc(task.name)}${editingTasks ? ' <small class="muted">✎</small>' : ''}</span>
+          <span class="task-pts">+${task.points.toLocaleString()}</span>
           ${editingTasks ? '<button class="task-del" aria-label="Delete">✕</button>' : ''}
         </li>`;
       })
@@ -286,12 +315,37 @@
       renderTasks();
       return;
     }
+    if (editingTasks && !e.target.closest('.task-check')) return editTask(task);
     if (e.target.closest('.task-check') && task.doneOn !== today()) {
       task.doneOn = today();
       addPoints(task.points, task.name);
       renderTasks();
     }
   });
+  function editTask(task) {
+    dialog(
+      `<h3>Edit task</h3>
+      <form id="etForm" class="col">
+        <input id="etName" maxlength="60" value="${esc(task.name)}" required>
+        <label class="small muted" style="text-align:left">Points (up to ${MAX_TASK_POINTS.toLocaleString()})
+          <input id="etPts" type="number" inputmode="numeric" min="1" max="${MAX_TASK_POINTS}" value="${task.points}" required></label>
+        <div class="row"><button type="button" class="btn" id="etCancel">Cancel</button><button class="btn primary" type="submit">Save</button></div>
+      </form>`,
+      (close) => {
+        $('#etCancel').onclick = close;
+        $('#etForm').onsubmit = (ev) => {
+          ev.preventDefault();
+          const name = $('#etName').value.trim();
+          if (!name) return;
+          task.name = name;
+          task.points = Math.min(MAX_TASK_POINTS, Math.max(1, parseInt($('#etPts').value, 10) || task.points));
+          save();
+          close();
+          renderTasks();
+        };
+      }
+    );
+  }
   $('#editTasksBtn').addEventListener('click', () => {
     editingTasks = !editingTasks;
     renderTasks();
@@ -299,7 +353,7 @@
   $('#addTaskForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const name = $('#newTaskName').value.trim();
-    const pts = Math.min(500, Math.max(1, parseInt($('#newTaskPts').value, 10) || 10));
+    const pts = Math.min(MAX_TASK_POINTS, Math.max(1, parseInt($('#newTaskPts').value, 10) || 10));
     if (!name) return;
     state.tasks.push({ id: 't' + Date.now(), name, points: pts, doneOn: null });
     $('#newTaskName').value = '';
@@ -906,7 +960,7 @@
           try {
             const d = JSON.parse($('#bkIn').value);
             if (typeof d !== 'object' || typeof d.points !== 'number' || typeof d.collection !== 'object') throw 0;
-            state = migrate(Object.assign(defaultState(), d));
+            state = migrate(Object.assign(defaultState(), d), d);
             save();
             close();
             renderPoints();
@@ -948,6 +1002,12 @@
   };
 
   renderPoints();
+  if (state.taskBackpay) {
+    const n = state.taskBackpay;
+    delete state.taskBackpay;
+    addPoints(n);
+    setTimeout(() => toast(`+${n} ◆: tasks you finished today now count at their new value`), 900);
+  }
   if (state.rateBackpay) {
     delete state.rateBackpay;
     const paid = creditSteps();
