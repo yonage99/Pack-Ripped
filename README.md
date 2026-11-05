@@ -6,7 +6,7 @@ added to your collection.
 
 ## Features
 - **Earn ◆ points**
-  - Steps: 100 steps = 1 ◆. Count steps live with the phone's motion sensor
+  - Steps: 10 steps = 1 ◆, so 1,000 steps earns a pack. Count steps live with the phone's motion sensor
     (while the app is open), or sync today's total from your Health app.
   - Daily tasks: editable list (workout, water, reading…), reset at midnight.
   - Daily check-in with a growing streak bonus.

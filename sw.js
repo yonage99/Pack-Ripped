@@ -1,5 +1,5 @@
 // Offline support: cache the app shell. Card data and images always come from the network.
-const CACHE = 'packripped-v5';
+const CACHE = 'packripped-v6';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'odds.js', 'commander.js', 'decks.js', 'config.js', 'social.js', 'vendor/supabase-2.119.0.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {

@@ -47,7 +47,7 @@
     packsOpened: 0,
     packCost: 100,
     collectorCost: 400, // Collector Boosters cost about 4x a regular pack
-    stepsPerPoint: 100, // 100 steps = 1 point, so 10,000 steps = 1 pack
+    stepsPerPoint: 10, // 10 steps = 1 point, so 1,000 steps = 1 pack
     steps: { date: today(), sensor: 0, manual: 0, credited: 0 },
     tasks: DEFAULT_TASKS.map((t) => ({ ...t, doneOn: null })),
     checkin: { last: null, streak: 0 },
@@ -56,7 +56,17 @@
     decks: [],
   });
 
-  let state = Object.assign(defaultState(), lsGet(STORE_KEY) || {});
+  // Saves from before the rate changed used 100 steps per point. Switch them to 10.
+  // Steps already paid out today stay paid; new steps earn at the new rate.
+  function migrate(s) {
+    if (s.stepsPerPoint === 100) {
+      s.stepsPerPoint = 10;
+      if (s.steps) s.steps.credited = (s.steps.credited || 0) * 10;
+    }
+    return s;
+  }
+
+  let state = migrate(Object.assign(defaultState(), lsGet(STORE_KEY) || {}));
   const save = () => {
     if (!lsSet(STORE_KEY, state)) toast('Storage is full. Copy a backup!');
     try { window.PR && window.PR.onSave && window.PR.onSave(); } catch {}
@@ -843,7 +853,7 @@
           try {
             const d = JSON.parse($('#bkIn').value);
             if (typeof d !== 'object' || typeof d.points !== 'number' || typeof d.collection !== 'object') throw 0;
-            state = Object.assign(defaultState(), d);
+            state = migrate(Object.assign(defaultState(), d));
             save();
             close();
             renderPoints();
