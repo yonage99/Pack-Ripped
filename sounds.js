@@ -131,14 +131,30 @@
       for (let i = 0; i < 6; i++) clink(a, t0 + 0.85 + i * 0.05, 3200 + i * 300, 0.06);
     },
 
+    /** One soft coin "tink" (cheap card), or two rising tinks (a bit better). */
+    tink(two) {
+      const a = audio();
+      if (!a) return;
+      const t = a.currentTime + 0.01;
+      clink(a, t, 2900, 0.11);
+      if (two) clink(a, t + 0.09, 3700, 0.13);
+    },
+
+    /** Wake the audio inside a tap (iPhones sometimes pause it between taps). */
+    wake() {
+      audio();
+    },
+
     /**
-     * Sound for a revealed card: big hits ding, good cards ka-ching, the rest stay quiet.
+     * Every revealed card gets a sound, bigger for better cards.
      * price: market value in dollars (0 when unknown).
      */
     forCard(card, price) {
       const tier = api.tier(card, price);
       if (tier === 'huge') api.dings();
       else if (tier === 'big') api.coin();
+      else if (tier === 'nice') api.tink(true);
+      else api.tink(false);
       return tier;
     },
 
@@ -147,6 +163,7 @@
       if (card.game === 'squishy') return card.rarity === 'mythic' ? 'huge' : card.rarity === 'rare' ? 'big' : 'small';
       if (price >= 20) return 'huge';
       if (price >= 2 || card.rarity === 'mythic') return 'big';
+      if (price >= 0.75 || card.rarity === 'rare' || card.rarity === 'uncommon') return 'nice';
       return 'small';
     },
   };

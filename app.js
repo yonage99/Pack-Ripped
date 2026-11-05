@@ -857,6 +857,7 @@
     };
 
     const next = () => {
+      if (window.PRSound) window.PRSound.wake(); // keep audio awake: this runs inside the tap
       i += 1;
       if (i >= pulls.length) showSummary(set, pulls, value, type);
       else showOne();
