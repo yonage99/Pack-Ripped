@@ -46,8 +46,32 @@
     },
   };
 
+  // Collector Boosters: Throne of Eldraine (Oct 2019) onward. 15 cards, mostly foil,
+  // about 5 rares/mythics, with extended-art, borderless and showcase versions.
+  // Exact contents differ by set; this follows the typical layout.
+  const COLLECTOR_START = '2019-10-04';
+  ODDS.collector = {
+    name: 'Collector Booster',
+    cards: 15,
+    mythicInRareSlot: 1 / 7.4,
+    mythicInSpecialSlot: 0.25,
+    slots: [
+      ['4', 'Foil commons'],
+      ['3', 'Foil uncommons'],
+      ['2', 'Foil showcase / special-frame commons or uncommons'],
+      ['1', 'Foil basic land'],
+      ['1', 'Foil rare (86.5%) or mythic (13.5%)'],
+      ['3', 'Extended-art, borderless or showcase rares/mythics (mythic 25%)'],
+      ['1', 'FOIL extended-art, borderless or showcase rare/mythic (mythic 25%)'],
+    ],
+  };
+
   function boosterTypeFor(releasedAt) {
     return releasedAt >= PLAY_BOOSTER_START ? 'play' : 'draft';
+  }
+
+  function hasCollector(releasedAt) {
+    return releasedAt >= COLLECTOR_START;
   }
 
   function weighted(table, rand, available) {
@@ -93,6 +117,26 @@
     const rareSlotRarity = () =>
       has('mythic') && (!has('rare') || rand() < o.mythicInRareSlot) ? 'mythic' : 'rare';
 
+    if (type === 'collector') {
+      // pool.altCU / altR / altM: alternate-art versions (may be empty for some sets)
+      const cu = pool.altCU && pool.altCU.length ? pool.altCU : pool.common.concat(pool.uncommon);
+      const altRM = () => {
+        const wantM = rand() < o.mythicInSpecialSlot;
+        if (wantM && pool.altM && pool.altM.length) return pickDistinct(pool.altM, 1, rand, used)[0];
+        if (pool.altR && pool.altR.length) return pickDistinct(pool.altR, 1, rand, used)[0];
+        if (pool.altM && pool.altM.length) return pickDistinct(pool.altM, 1, rand, used)[0];
+        return pickDistinct(pool[rareSlotRarity()], 1, rand, used)[0];
+      };
+      pickDistinct(pool.common, 4, rand, used).forEach((c) => push(c, true, 'common'));
+      pickDistinct(pool.uncommon, 3, rand, used).forEach((c) => push(c, true, 'uncommon'));
+      pickDistinct(cu, 2, rand, used).forEach((c) => push(c, true, 'special'));
+      push(has('basic') ? pickOne(pool.basic, rand) : pickDistinct(pool.common, 1, rand, used)[0], true, 'land');
+      push(pickDistinct(pool[rareSlotRarity()], 1, rand, used)[0], true, 'rare');
+      for (let i = 0; i < 3; i++) push(altRM(), false, 'special-rare');
+      push(altRM(), true, 'special-rare');
+      return out;
+    }
+
     if (type === 'play') {
       pickDistinct(pool.common, 7, rand, used).forEach((c) => push(c, false, 'common'));
       pickDistinct(pool.uncommon, 3, rand, used).forEach((c) => push(c, false, 'uncommon'));
@@ -117,7 +161,7 @@
     return out;
   }
 
-  const api = { ODDS, PLAY_BOOSTER_START, boosterTypeFor, openPack };
+  const api = { ODDS, PLAY_BOOSTER_START, COLLECTOR_START, boosterTypeFor, hasCollector, openPack };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.PackOdds = api;
 })(typeof self !== 'undefined' ? self : this);

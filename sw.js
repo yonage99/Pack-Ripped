@@ -1,5 +1,5 @@
 // Offline support: cache the app shell. Card data and images always come from the network.
-const CACHE = 'packripped-v1';
+const CACHE = 'packripped-v2';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'odds.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {

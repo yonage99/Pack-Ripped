@@ -15,6 +15,10 @@ added to your collection.
   - Play Boosters (2024+): 14 cards, 1 rare/mythic (mythic ~13.5%), a wildcard,
     and a foil.
   - Draft Boosters (older sets): 15 cards, mythic 1 in 8, foil in ~1 of 3 packs.
+  - Collector Boosters (Throne of Eldraine, 2019, onward; 400 ◆): 15 cards,
+    12 foils, 5 rares/mythics, including the set's real extended-art,
+    borderless and showcase versions. Contents vary by set, so this uses the
+    typical layout.
 - **Collection** with copies, foils, market prices, filters, and pack history.
 - Installable on your phone's home screen. Backup and restore by copy/paste.
 

@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const { ODDS, boosterTypeFor, openPack } = window.PackOdds;
+  const { ODDS, boosterTypeFor, hasCollector, openPack } = window.PackOdds;
   const API = 'https://api.scryfall.com';
   const STORE_KEY = 'packripped:v1';
   const SETS_KEY = 'packripped:sets';
@@ -46,6 +46,7 @@
     lifetimePoints: 100,
     packsOpened: 0,
     packCost: 100,
+    collectorCost: 400, // Collector Boosters cost about 4x a regular pack
     stepsPerPoint: 100, // 100 steps = 1 point, so 10,000 steps = 1 pack
     steps: { date: today(), sensor: 0, manual: 0, credited: 0 },
     tasks: DEFAULT_TASKS.map((t) => ({ ...t, doneOn: null })),
@@ -58,6 +59,8 @@
   const save = () => {
     if (!lsSet(STORE_KEY, state)) toast('Storage is full. Copy a backup!');
   };
+
+  const costFor = (type) => (type === 'collector' ? state.collectorCost : state.packCost);
 
   function rollDay() {
     if (state.steps.date !== today()) {
@@ -369,7 +372,7 @@
           (s) => `<button class="set-item" data-code="${esc(s.code)}">
           <img class="set-icon" src="${esc(s.icon)}" alt="" loading="lazy">
           <span class="set-meta"><b>${esc(s.name)}</b>
-          <small>${esc(s.released.slice(0, 4))} · ${ODDS[boosterTypeFor(s.released)].name}</small></span>
+          <small>${esc(s.released.slice(0, 4))} · ${ODDS[boosterTypeFor(s.released)].name}${hasCollector(s.released) ? ' · <span class="cb-badge">Collector</span>' : ''}</small></span>
           <span class="set-cost ${canAfford ? '' : 'poor'}">${state.packCost} ◆</span>
         </button>`
         )
@@ -396,29 +399,61 @@
       usdFoil: parseFloat(c.prices && c.prices.usd_foil) || 0,
       basic: /Basic Land/.test(c.type_line || ''),
       uri: c.scryfall_uri,
+      treat: treatment(c),
     };
   }
 
-  async function loadPool(code, onProgress) {
-    const cached = lsGet(POOL_PREFIX + code);
-    if (cached && Date.now() - cached.at < 7 * 86400000) return cached.pool;
-    const pool = { common: [], uncommon: [], rare: [], mythic: [], basic: [] };
-    let url = `${API}/cards/search?q=${encodeURIComponent(`set:${code} is:booster game:paper`)}&unique=prints&order=set`;
+  function treatment(c) {
+    const fx = c.frame_effects || [];
+    if (fx.includes('extendedart')) return 'Extended art';
+    if (c.border_color === 'borderless') return 'Borderless';
+    if (fx.includes('showcase')) return 'Showcase';
+    if (c.full_art && !/Basic Land/.test(c.type_line || '')) return 'Full art';
+    return '';
+  }
+
+  async function searchAll(q, onCard, onProgress) {
+    let url = `${API}/cards/search?q=${encodeURIComponent(q)}&unique=prints&order=set`;
     let n = 0;
     while (url) {
       const res = await scry(url);
       if (res.object === 'error') break;
-      for (const raw of res.data) {
-        const c = slimCard(raw);
-        if (c.basic) pool.basic.push(c);
-        else if (pool[c.rarity]) pool[c.rarity].push(c);
-        else if (c.rarity === 'special' || c.rarity === 'bonus') pool.rare.push(c);
-      }
+      res.data.forEach((raw) => onCard(slimCard(raw)));
       n += res.data.length;
       onProgress && onProgress(n, res.total_cards);
       url = res.has_more ? res.next_page : null;
     }
-    if (!pool.common.length || !pool.rare.length) return null;
+  }
+
+  async function loadPool(code, onProgress, withAlt) {
+    const cached = lsGet(POOL_PREFIX + code);
+    const fresh = cached && Date.now() - cached.at < 7 * 86400000;
+    if (fresh && (!withAlt || cached.pool.altLoaded)) return cached.pool;
+    let pool;
+    if (fresh) pool = cached.pool;
+    else {
+      pool = { common: [], uncommon: [], rare: [], mythic: [], basic: [] };
+      await searchAll(`set:${code} is:booster game:paper`, (c) => {
+        if (c.basic) pool.basic.push(c);
+        else if (pool[c.rarity]) pool[c.rarity].push(c);
+        else if (c.rarity === 'special' || c.rarity === 'bonus') pool.rare.push(c);
+      }, onProgress);
+      if (!pool.common.length || !pool.rare.length) return null;
+    }
+    if (withAlt) {
+      // Extended-art, borderless and showcase versions found in Collector Boosters.
+      pool.altCU = []; pool.altR = []; pool.altM = [];
+      await searchAll(
+        `set:${code} game:paper -type:basic -is:promo -is:serialized (is:extendedart OR border:borderless OR frame:showcase)`,
+        (c) => {
+          if (c.rarity === 'mythic') pool.altM.push(c);
+          else if (c.rarity === 'rare' || c.rarity === 'special') pool.altR.push(c);
+          else if (c.rarity === 'common' || c.rarity === 'uncommon') pool.altCU.push(c);
+        },
+        (n, t) => onProgress && onProgress(n, t, 'special')
+      );
+      pool.altLoaded = true;
+    }
     // Keep only the 6 most recently used pools to save space.
     try {
       const keys = Object.keys(localStorage).filter((k) => k.startsWith(POOL_PREFIX));
@@ -435,24 +470,36 @@
   }
 
   // ---------- opening packs ----------
-  function confirmOpen(set) {
-    const type = boosterTypeFor(set.released);
+  function confirmOpen(set, chosen) {
+    const base = boosterTypeFor(set.released);
+    const type = chosen || base;
     const o = ODDS[type];
-    const can = state.points >= state.packCost;
+    const cost = costFor(type);
+    const can = state.points >= cost;
+    const tabs = hasCollector(set.released)
+      ? `<div class="seg">
+          <button data-type="${base}" class="${type === base ? 'on' : ''}">${ODDS[base].name}<small>${state.packCost} ◆</small></button>
+          <button data-type="collector" class="${type === 'collector' ? 'on' : ''}">Collector Booster<small>${state.collectorCost} ◆</small></button>
+        </div>`
+      : '';
     dialog(
       `<img class="set-icon big" src="${esc(set.icon)}" alt="">
       <h3>${esc(set.name)}</h3>
+      ${tabs}
       <p class="muted">${o.name} · ${o.cards} cards</p>
       <table class="odds">${o.slots.map(([n, d]) => `<tr><td>${n}</td><td>${esc(d)}</td></tr>`).join('')}</table>
-      <p class="muted small">Odds are based on Wizards of the Coast's published pack contents, so they're approximate.</p>
+      <p class="muted small">${type === 'collector'
+        ? "Collector Booster contents differ from set to set. This uses the typical layout, with the set's real extended-art, borderless and showcase cards."
+        : "Odds are based on Wizards of the Coast's published pack contents, so they're approximate."}</p>
       <div class="row">
         <button class="btn" data-act="cancel">Cancel</button>
         <button class="btn primary" data-act="open" ${can ? '' : 'disabled'}>${
-        can ? `Rip it! (${state.packCost} ◆)` : `Need ${state.packCost - state.points} more ◆`
+        can ? `Rip it! (${cost} ◆)` : `Need ${cost - state.points} more ◆`
       }</button>
       </div>`,
       (close) => {
         $('#dialogBox').querySelector('[data-act=cancel]').onclick = close;
+        $('#dialogBox').querySelectorAll('.seg button').forEach((b) => (b.onclick = () => confirmOpen(set, b.dataset.type)));
         $('#dialogBox').querySelector('[data-act=open]').onclick = () => {
           close();
           ripPack(set, type);
@@ -463,7 +510,8 @@
 
   let ripping = false;
   async function ripPack(set, type) {
-    if (ripping || state.points < state.packCost) return;
+    const cost = costFor(type);
+    if (ripping || state.points < cost) return;
     ripping = true;
     const ov = $('#packOverlay');
     const stage = $('#packStage');
@@ -471,10 +519,10 @@
     stage.innerHTML = `<div class="loading"><div class="spinner"></div><p id="loadMsg">Shuffling ${esc(set.name)}…</p></div>`;
     let pool;
     try {
-      pool = await loadPool(set.code, (n, t) => {
+      pool = await loadPool(set.code, (n, t, what) => {
         const m = $('#loadMsg');
-        if (m) m.textContent = `Loading cards… ${n}/${t}`;
-      });
+        if (m) m.textContent = `Loading ${what === 'special' ? 'special versions' : 'cards'}… ${n}/${t}`;
+      }, type === 'collector');
     } catch (e) {
       pool = null;
     }
@@ -488,7 +536,7 @@
 
     const pulls = openPack(pool, type);
     // Pay & record before reveal, so closing the app mid-reveal doesn't lose cards.
-    state.points -= state.packCost;
+    state.points -= cost;
     state.packsOpened += 1;
     const now = Date.now();
     for (const p of pulls) {
@@ -503,6 +551,7 @@
       at: now,
       set: set.code,
       setName: set.name,
+      type,
       value,
       best: bestPull(pulls).card.name,
       cards: pulls.map((p) => [p.card.id, p.foil ? 1 : 0]),
@@ -511,7 +560,7 @@
     save();
     renderPoints(true);
 
-    showPackFront(set, pulls, value);
+    showPackFront(set, pulls, value, type);
   }
 
   const cardPrice = (c, foil) => (foil ? c.usdFoil || c.usd : c.usd || c.usdFoil) || 0;
@@ -522,15 +571,15 @@
     });
   }
 
-  function showPackFront(set, pulls, value) {
+  function showPackFront(set, pulls, value, type) {
     const stage = $('#packStage');
     stage.innerHTML = `
-      <div class="pack" id="pack">
+      <div class="pack ${type === 'collector' ? 'collector' : ''}" id="pack">
         <div class="pack-top"></div>
         <div class="pack-body">
           <img src="${esc(set.icon)}" alt="">
           <div class="pack-name">${esc(set.name)}</div>
-          <div class="pack-type">${ODDS[boosterTypeFor(set.released)].name}</div>
+          <div class="pack-type">${ODDS[type].name}</div>
         </div>
       </div>
       <p class="hint">Tap the pack to rip it open</p>`;
@@ -540,11 +589,11 @@
       pack.classList.add('ripping');
       if (navigator.vibrate) navigator.vibrate(30);
       await sleep(650);
-      revealCards(set, pulls, value);
+      revealCards(set, pulls, value, type);
     };
   }
 
-  function revealCards(set, pulls, value) {
+  function revealCards(set, pulls, value, type) {
     const stage = $('#packStage');
     let i = 0;
     stage.innerHTML = `
@@ -574,7 +623,7 @@
           <span class="rarity-dot ${p.card.rarity}"></span>
           <b>${esc(p.card.name)}</b>${p.foil ? ' <span class="foil-tag">FOIL</span>' : ''}
           ${ownedBefore ? '<span class="new-tag">NEW</span>' : ''}
-          <div class="muted small">${cap(p.card.rarity)} · ${money(cardPrice(p.card, p.foil))}</div>
+          <div class="muted small">${cap(p.card.rarity)}${p.card.treat ? ' · ' + esc(p.card.treat) : ''} · ${money(cardPrice(p.card, p.foil))}</div>
         </div>`;
       const flip = wrap.querySelector('.flip');
       // Hold rares/mythics a moment longer for suspense.
@@ -592,12 +641,12 @@
 
     const next = () => {
       i += 1;
-      if (i >= pulls.length) showSummary(set, pulls, value);
+      if (i >= pulls.length) showSummary(set, pulls, value, type);
       else showOne();
     };
     wrap.onclick = next;
     $('#revHint').onclick = next;
-    $('#revAll').onclick = () => showSummary(set, pulls, value);
+    $('#revAll').onclick = () => showSummary(set, pulls, value, type);
     showOne();
   }
 
@@ -611,7 +660,8 @@
     return pulls.findIndex((x) => x.card.id === p.card.id) === idx;
   }
 
-  function showSummary(set, pulls, value) {
+  function showSummary(set, pulls, value, type) {
+    const cost = costFor(type);
     const stage = $('#packStage');
     const best = bestPull(pulls);
     const sorted = pulls.slice().sort(
@@ -620,6 +670,7 @@
     stage.innerHTML = `
       <div class="summary">
         <h3>${esc(set.name)}</h3>
+        <p class="muted small">${ODDS[type].name}</p>
         <p class="muted">Pack value <b class="val">${money(value)}</b> · Best: ${esc(best.card.name)}</p>
         <div class="grid small-grid">
           ${sorted
@@ -634,8 +685,8 @@
         <p class="muted small">All ${pulls.length} cards were added to your collection.</p>
         <div class="row center">
           <button class="btn" id="sumDone">Done</button>
-          <button class="btn primary" id="sumAgain" ${state.points >= state.packCost ? '' : 'disabled'}>
-            ${state.points >= state.packCost ? `Rip another (${state.packCost} ◆)` : `Need ${state.packCost - state.points} ◆`}
+          <button class="btn primary" id="sumAgain" ${state.points >= cost ? '' : 'disabled'}>
+            ${state.points >= cost ? `Rip another (${cost} ◆)` : `Need ${cost - state.points} ◆`}
           </button>
         </div>
       </div>`;
@@ -647,7 +698,7 @@
     };
     $('#sumAgain').onclick = () => {
       ripping = false;
-      ripPack(set, boosterTypeFor(set.released));
+      ripPack(set, type);
     };
   }
 
@@ -721,7 +772,7 @@
       state.history
         .slice(0, 10)
         .map(
-          (h) => `<li><span><b>${esc(h.setName)}</b><small>${new Date(h.at).toLocaleString()}</small></span>
+          (h) => `<li><span><b>${esc(h.setName)}</b><small>${h.type === 'collector' ? 'Collector · ' : ''}${new Date(h.at).toLocaleString()}</small></span>
           <span class="right">${money(h.value)}<small>${esc(h.best)}</small></span></li>`
         )
         .join('') || '<li class="muted">No packs opened yet.</li>';
@@ -745,7 +796,7 @@
       </div>
       <h3>${esc(c.name)}</h3>
       <p class="muted">${esc(c.type || '')}</p>
-      <p><span class="rarity-dot ${c.rarity}"></span>${cap(c.rarity)} · ${esc(c.setName)} #${esc(c.num)}</p>
+      <p><span class="rarity-dot ${c.rarity}"></span>${cap(c.rarity)}${c.treat ? ' · ' + esc(c.treat) : ''} · ${esc(c.setName)} #${esc(c.num)}</p>
       <table class="odds">
         <tr><td>Regular</td><td>×${e.n} · ${money(c.usd)} each</td></tr>
         <tr><td>Foil</td><td>×${e.f} · ${money(c.usdFoil)} each</td></tr>

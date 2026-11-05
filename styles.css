@@ -256,3 +256,20 @@ textarea.backup { height: 160px; font-size: 12px; font-family: monospace; margin
   top: calc(64px + var(--safe-top)); background: #2f2750; padding: 10px 16px;
   border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); max-width: 90vw; text-align: center;
 }
+
+/* Collector Boosters */
+.cb-badge { color: var(--rare); font-weight: 700; }
+.seg { display: flex; gap: 6px; background: var(--panel2); padding: 4px; border-radius: 14px; margin: 10px 0 4px; }
+.seg button {
+  flex: 1; border: 0; background: none; border-radius: 10px; padding: 8px 4px; font-weight: 700; font-size: 14px;
+  color: var(--muted); display: flex; flex-direction: column; align-items: center;
+}
+.seg button small { font-weight: 600; font-size: 12px; }
+.seg button.on { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #1b1020; }
+.pack.collector .pack-top { background: repeating-linear-gradient(90deg, #f3d77a 0 6px, #b8902e 6px 12px); }
+.pack.collector .pack-body {
+  background: linear-gradient(160deg, #0b0b0f, #1d1a12 50%, #3a2e10);
+  box-shadow: 0 20px 70px rgba(232, 196, 90, 0.45), inset 0 0 0 2px rgba(232, 196, 90, 0.6);
+}
+.pack.collector .pack-type { color: var(--rare); }
+.pack.collector .pack-body img { filter: invert(78%) sepia(55%) saturate(500%) hue-rotate(5deg); }
