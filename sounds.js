@@ -109,9 +109,9 @@
       const t = a.currentTime + 0.01;
       noise(a, t, 0.06, 0.25, 4000);
       clink(a, t + 0.02, 2600, 0.12);
-      tone(a, t + 0.06, 1318.5, 0.18, 0.22, 'square'); // E6
+      tone(a, t + 0.06, 1318.5, 0.18, 0.3, 'square'); // E6
       tone(a, t + 0.06, 2637, 0.18, 0.06, 'sine');
-      tone(a, t + 0.15, 1975.5, 0.55, 0.22, 'square'); // B6
+      tone(a, t + 0.15, 1975.5, 0.55, 0.3, 'square'); // B6
       tone(a, t + 0.15, 3951, 0.5, 0.06, 'sine');
     },
 
@@ -131,13 +131,30 @@
       for (let i = 0; i < 6; i++) clink(a, t0 + 0.85 + i * 0.05, 3200 + i * 300, 0.06);
     },
 
-    /** One soft coin "tink" (cheap card), or two rising tinks (a bit better). */
-    tink(two) {
+    /**
+     * A few coins dropped on a table: each coin lands, then bounces twice, quieter each
+     * time. Cheap cards drop 2 coins, slightly better cards drop 3.
+     */
+    drop(coins) {
       const a = audio();
       if (!a) return;
-      const t = a.currentTime + 0.01;
-      clink(a, t, 2900, 0.11);
-      if (two) clink(a, t + 0.09, 3700, 0.13);
+      const t0 = a.currentTime + 0.01;
+      for (let c = 0; c < coins; c++) {
+        const start = t0 + c * 0.085 + Math.random() * 0.03;
+        const pitch = 1700 + Math.random() * 900;
+        // land, bounce, bounce: gaps shrink and volume drops like a real coin settling
+        [[0, 0.19], [0.11, 0.1], [0.18, 0.055]].forEach(([dt, vol]) => {
+          const t = start + dt;
+          tone(a, t, pitch, 0.22, vol, 'triangle');
+          tone(a, t, pitch * 2.4, 0.12, vol * 0.45, 'sine');
+          noise(a, t, 0.04, vol * 0.9, pitch * 1.3);
+        });
+      }
+    },
+
+    /** Kept for older callers: one or two coins. */
+    tink(two) {
+      api.drop(two ? 3 : 2);
     },
 
     /** Wake the audio inside a tap (iPhones sometimes pause it between taps). */
@@ -153,8 +170,8 @@
       const tier = api.tier(card, price);
       if (tier === 'huge') api.dings();
       else if (tier === 'big') api.coin();
-      else if (tier === 'nice') api.tink(true);
-      else api.tink(false);
+      else if (tier === 'nice') api.drop(3);
+      else api.drop(2);
       return tier;
     },
 

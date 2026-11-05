@@ -1,6 +1,6 @@
 // Offline support: cache the app shell, and keep card pictures on the phone so they
 // show up instantly next time (card images never change, so they're cached for good).
-const CACHE = 'packripped-v22';
+const CACHE = 'packripped-v23';
 const IMG_CACHE = 'packripped-images-v1';
 const IMG_HOSTS = ['cards.scryfall.io', 'svgs.scryfall.io', 'assets.tcgdex.net'];
 const IMG_MAX = 2500; // about 40 MB of pictures at most; oldest are dropped first
