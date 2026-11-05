@@ -7,6 +7,8 @@
   const STORE_KEY = 'packripped:v1';
   const SETS_KEY = 'packripped:sets';
   const POOL_PREFIX = 'packripped:pool2:'; // v2 adds Commander data to cards
+  // Sets that were never sold in regular booster packs.
+  const NO_BOOSTERS = ['acr', 'clu', 'mat', 'tsb', '4bb'];
   const RARITY_ORDER = { mythic: 4, rare: 3, uncommon: 2, common: 1 };
 
   const DEFAULT_TASKS = [
@@ -365,7 +367,8 @@
             s.released_at &&
             s.released_at <= t &&
             s.card_count >= 100 &&
-            !/jumpstart|mystery|starter|two-player|anthology/i.test(s.name)
+            !/jumpstart|mystery|starter|two-player|anthology/i.test(s.name) &&
+            !NO_BOOSTERS.includes(s.code)
         )
         .map((s) => ({ code: s.code, name: s.name, released: s.released_at, icon: s.icon_svg_uri, count: s.card_count }));
       lsSet(SETS_KEY, { at: Date.now(), sets });
@@ -434,7 +437,7 @@
     while (url) {
       const res = await scry(url);
       if (res.object === 'error') break;
-      res.data.forEach((raw) => onCard(slimCard(raw)));
+      res.data.forEach((raw) => onCard(slimCard(raw), raw));
       n += res.data.length;
       onProgress && onProgress(n, res.total_cards);
       url = res.has_more ? res.next_page : null;
@@ -448,13 +451,31 @@
     let pool;
     if (fresh) pool = cached.pool;
     else {
-      pool = { common: [], uncommon: [], rare: [], mythic: [], basic: [] };
-      await searchAll(`set:${code} is:booster game:paper`, (c) => {
-        if (c.basic) pool.basic.push(c);
-        else if (pool[c.rarity]) pool[c.rarity].push(c);
-        else if (c.rarity === 'special' || c.rarity === 'bonus') pool.rare.push(c);
-      }, onProgress);
-      if (!pool.common.length || !pool.rare.length) return null;
+      const empty = () => ({ common: [], uncommon: [], rare: [], mythic: [], basic: [] });
+      const addTo = (p) => (c) => {
+        if (c.basic) p.basic.push(c);
+        else if (p[c.rarity]) p[c.rarity].push(c);
+        else if (c.rarity === 'special' || c.rarity === 'bonus') p.rare.push(c);
+      };
+      pool = empty();
+      await searchAll(`set:${code} is:booster game:paper`, addTo(pool), onProgress);
+      if (pool.common.length < 20 || !pool.rare.length) {
+        // Scryfall hasn't tagged which cards come in boosters yet (common for the newest
+        // sets). Use the set's regular cards instead: numbered cards with the normal frame,
+        // leaving out promos and the special-art versions.
+        pool = empty();
+        const add = addTo(pool);
+        await searchAll(`set:${code} game:paper -is:promo -is:serialized`, (c, raw) => {
+          const fx = raw.frame_effects || [];
+          const special =
+            !/^\d+$/.test(raw.collector_number) ||
+            fx.includes('showcase') || fx.includes('extendedart') ||
+            raw.border_color === 'borderless' ||
+            (raw.full_art && !c.basic);
+          if (!special) add(c);
+        }, onProgress);
+      }
+      if (pool.common.length < 20 || !pool.rare.length) return null;
     }
     if (withAlt) {
       // Extended-art, borderless and showcase versions found in Collector Boosters.
@@ -543,7 +564,7 @@
       pool = null;
     }
     if (!pool) {
-      stage.innerHTML = `<div class="loading"><p>Couldn't load booster cards for this set. Try another one, or check your connection.</p>
+      stage.innerHTML = `<div class="loading"><p>Couldn't load cards for this set. Check your connection and try again, or pick another set.</p>
         <button class="btn" id="closeErr">Close</button></div>`;
       $('#closeErr').onclick = () => ov.classList.add('hidden');
       ripping = false;
