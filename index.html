@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#14111f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pack Ripped">
+  <title>Pack Ripped</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Pack <span>Ripped</span></div>
+    <div class="points-chip" id="pointsChip" aria-live="polite">
+      <span class="coin">◆</span> <b id="pointsVal">0</b>
+    </div>
+  </header>
+
+  <main>
+    <!-- EARN -->
+    <section id="view-earn" class="view active">
+      <div class="card-panel steps-panel">
+        <div class="panel-head">
+          <h2>Steps today</h2>
+          <span class="muted" id="stepRate"></span>
+        </div>
+        <div class="step-big"><span id="stepsToday">0</span></div>
+        <div class="progress"><div id="stepProgress"></div></div>
+        <p class="muted small" id="stepNext"></p>
+        <div class="row">
+          <button class="btn primary" id="walkBtn">Start walk tracking</button>
+        </div>
+        <p class="muted small" id="walkStatus">Counts steps with your phone's motion sensor while this app is open.</p>
+        <details class="manual">
+          <summary>Sync from your Health / Fitness app</summary>
+          <p class="muted small">Open your Health app and enter today's step total here. You only earn for new steps, so nothing gets counted twice.</p>
+          <form id="manualStepsForm" class="row">
+            <input type="number" inputmode="numeric" min="0" max="200000" id="manualSteps" placeholder="Today's total steps">
+            <button class="btn" type="submit">Sync</button>
+          </form>
+        </details>
+      </div>
+
+      <div class="card-panel">
+        <div class="panel-head">
+          <h2>Daily tasks</h2>
+          <button class="link-btn" id="editTasksBtn">Edit</button>
+        </div>
+        <ul class="task-list" id="taskList"></ul>
+        <form id="addTaskForm" class="add-task hidden">
+          <input id="newTaskName" placeholder="New task (e.g. 20 push-ups)" maxlength="60" required>
+          <input id="newTaskPts" type="number" inputmode="numeric" min="1" max="500" value="20" required>
+          <button class="btn" type="submit">Add</button>
+        </form>
+        <p class="muted small">Tasks reset every day at midnight.</p>
+      </div>
+
+      <div class="card-panel">
+        <div class="panel-head"><h2>Daily check-in</h2></div>
+        <button class="btn wide" id="checkinBtn">Claim daily bonus</button>
+        <p class="muted small" id="streakText"></p>
+      </div>
+    </section>
+
+    <!-- OPEN -->
+    <section id="view-open" class="view">
+      <div class="card-panel">
+        <div class="panel-head">
+          <h2>Choose a set</h2>
+          <span class="muted small" id="packCostText"></span>
+        </div>
+        <input type="search" id="setSearch" placeholder="Search sets…">
+        <div class="set-list" id="setList"><p class="muted">Loading sets…</p></div>
+      </div>
+    </section>
+
+    <!-- COLLECTION -->
+    <section id="view-collection" class="view">
+      <div class="card-panel">
+        <div class="stats-row" id="collStats"></div>
+        <div class="filters">
+          <select id="collSet"><option value="">All sets</option></select>
+          <select id="collRarity">
+            <option value="">All rarities</option>
+            <option value="mythic">Mythic</option>
+            <option value="rare">Rare</option>
+            <option value="uncommon">Uncommon</option>
+            <option value="common">Common</option>
+          </select>
+          <select id="collSort">
+            <option value="value">Sort: Value</option>
+            <option value="recent">Sort: Recent</option>
+            <option value="name">Sort: Name</option>
+            <option value="count">Sort: Copies</option>
+          </select>
+        </div>
+        <input type="search" id="collSearch" placeholder="Search your cards…">
+      </div>
+      <div class="grid" id="collGrid"></div>
+      <div class="card-panel">
+        <div class="panel-head"><h2>Recent packs</h2></div>
+        <ul class="history" id="historyList"></ul>
+      </div>
+      <div class="card-panel">
+        <div class="panel-head"><h2>Backup</h2></div>
+        <p class="muted small">Your collection is saved on this phone, in this browser. Copy a backup now and then so you don't lose it.</p>
+        <div class="row">
+          <button class="btn" id="exportBtn">Copy backup</button>
+          <button class="btn" id="importBtn">Restore</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button data-view="earn" class="active"><span class="ti">⚡</span>Earn</button>
+    <button data-view="open"><span class="ti">✦</span>Open</button>
+    <button data-view="collection"><span class="ti">▦</span>Collection</button>
+  </nav>
+
+  <!-- Pack opening overlay -->
+  <div class="overlay hidden" id="packOverlay">
+    <div class="pack-stage" id="packStage"></div>
+  </div>
+
+  <!-- Card detail -->
+  <div class="overlay hidden" id="cardModal">
+    <div class="modal-inner" id="cardModalInner"></div>
+  </div>
+
+  <!-- Generic dialog -->
+  <div class="overlay hidden" id="dialog">
+    <div class="dialog-box" id="dialogBox"></div>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="odds.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
