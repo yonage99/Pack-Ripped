@@ -246,6 +246,14 @@ create table if not exists public.pw_players (
   primary key (game_id, user_id)
 );
 
+alter table public.pw_games add column if not exists game_number integer not null default 1;
+alter table public.pw_games add column if not exists host_wins integer not null default 0;
+alter table public.pw_games add column if not exists guest_wins integer not null default 0;
+alter table public.pw_games add column if not exists last_loser uuid;
+alter table public.pw_games drop constraint if exists pw_games_status_check;
+alter table public.pw_games add constraint pw_games_status_check
+  check (status in ('invited', 'building', 'playing', 'between', 'done', 'declined', 'cancelled'));
+
 alter table public.pw_games enable row level security;
 alter table public.pw_players enable row level security;
 revoke all on public.pw_games, public.pw_players from anon, authenticated;
@@ -299,7 +307,7 @@ declare
 begin
   select * into g from pw_games where id = p_game and auth.uid() in (host, guest) for update;
   if not found then raise exception 'Game not found.'; end if;
-  if g.status not in ('invited', 'building') then raise exception 'This game already started.'; end if;
+  if g.status not in ('invited', 'building', 'between') then raise exception 'This game already started.'; end if;
   update pw_players set pub = p_pub, priv = p_priv, ready = true where game_id = p_game and user_id = auth.uid();
   select bool_and(ready) into both_ready from pw_players where game_id = p_game;
   g.log := pw_log(g, auth.uid(), 'is ready');
@@ -307,6 +315,14 @@ begin
     g.turn_player := case when random() < 0.5 then g.host else g.guest end;
     g.log := pw_log(g, g.turn_player, 'won the coin flip and goes first');
     update pw_games set status = 'playing', turn_player = g.turn_player, turn_number = 1,
+      log = g.log, version = version + 1, updated_at = now() where id = p_game;
+    return 'playing';
+  end if;
+  if both_ready and g.status = 'between' then
+    g.turn_player := coalesce(g.last_loser, g.host);
+    g.game_number := g.game_number + 1;
+    g.log := pw_log(g, g.turn_player, 'lost the last game, so they go first in game ' || g.game_number);
+    update pw_games set status = 'playing', turn_player = g.turn_player, turn_number = 1, game_number = g.game_number,
       log = g.log, version = version + 1, updated_at = now() where id = p_game;
     return 'playing';
   end if;
@@ -320,6 +336,9 @@ language sql stable security definer set search_path = public as $$
   select case when g.version = coalesce(p_version, -1) then null else jsonb_build_object(
     'id', g.id, 'status', g.status, 'set', g.set_info, 'version', g.version,
     'turn_number', g.turn_number, 'my_turn', g.turn_player = auth.uid(),
+    'game_number', g.game_number,
+    'my_wins', case when g.host = auth.uid() then g.host_wins else g.guest_wins end,
+    'opp_wins', case when g.host = auth.uid() then g.guest_wins else g.host_wins end,
     'host', g.host = auth.uid(),
     'winner', case when g.winner is null then null when g.winner = auth.uid() then 'me' else 'opp' end,
     'log', g.log,
@@ -341,7 +360,8 @@ declare
 begin
   select * into g from pw_games where id = p_game and auth.uid() in (host, guest) for update;
   if not found then raise exception 'Game not found.'; end if;
-  if g.status <> 'playing' then raise exception 'This game is over.'; end if;
+  if g.status = 'between' then raise exception 'Waiting for the next game to start.'; end if;
+  if g.status <> 'playing' then raise exception 'This match is over.'; end if;
   opp := case when g.host = auth.uid() then g.guest else g.host end;
   update pw_players set pub = coalesce(p_pub, pub), priv = coalesce(p_priv, priv)
   where game_id = p_game and user_id = auth.uid();
@@ -351,12 +371,21 @@ begin
     g.turn_number := g.turn_number + 1;
   end if;
   if p_lost then
-    g.winner := opp;
-    g.status := 'done';
-    g.log := pw_log(g, opp, 'wins!');
+    if opp = g.host then g.host_wins := g.host_wins + 1; else g.guest_wins := g.guest_wins + 1; end if;
+    g.last_loser := auth.uid();
+    if greatest(g.host_wins, g.guest_wins) >= 2 then
+      g.winner := opp;
+      g.status := 'done';
+      g.log := pw_log(g, opp, 'wins the match ' || greatest(g.host_wins, g.guest_wins) || '–' || least(g.host_wins, g.guest_wins) || '!');
+    else
+      g.status := 'between';
+      g.log := pw_log(g, opp, 'wins game ' || g.game_number);
+      update pw_players set ready = false where game_id = p_game;
+    end if;
   end if;
   update pw_games set log = g.log, turn_player = g.turn_player, turn_number = g.turn_number,
-    winner = g.winner, status = g.status, version = version + 1, updated_at = now()
+    winner = g.winner, status = g.status, host_wins = g.host_wins, guest_wins = g.guest_wins,
+    last_loser = g.last_loser, version = version + 1, updated_at = now()
   where id = p_game
   returning version into g.version;
   return g.version;
@@ -369,9 +398,9 @@ declare g pw_games;
 begin
   select * into g from pw_games where id = p_game and auth.uid() in (host, guest) for update;
   if not found then return; end if;
-  if g.status = 'playing' then
+  if g.status in ('playing', 'between') then
     update pw_games set status = 'done', winner = case when g.host = auth.uid() then g.guest else g.host end,
-      log = pw_log(g, auth.uid(), 'conceded'), version = version + 1, updated_at = now() where id = p_game;
+      log = pw_log(g, auth.uid(), 'conceded the match'), version = version + 1, updated_at = now() where id = p_game;
   elsif g.status in ('invited', 'building') then
     update pw_games set status = 'cancelled', log = pw_log(g, auth.uid(), 'cancelled the game'),
       version = version + 1, updated_at = now() where id = p_game;
@@ -383,14 +412,16 @@ language sql stable security definer set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object(
     'id', g.id, 'status', g.status, 'set', g.set_info, 'host', g.host = auth.uid(),
     'opponent', (select username from profiles where id = case when g.host = auth.uid() then g.guest else g.host end),
-    'my_turn', g.turn_player = auth.uid(), 'turn_number', g.turn_number,
+    'my_turn', g.turn_player = auth.uid(), 'turn_number', g.turn_number, 'game_number', g.game_number,
+    'my_wins', case when g.host = auth.uid() then g.host_wins else g.guest_wins end,
+    'opp_wins', case when g.host = auth.uid() then g.guest_wins else g.host_wins end,
     'winner', case when g.winner is null then null when g.winner = auth.uid() then 'me' else 'opp' end,
     'my_ready', (select ready from pw_players where game_id = g.id and user_id = auth.uid()),
     'updated_at', g.updated_at
   ) order by g.updated_at desc), '[]'::jsonb)
   from pw_games g
   where auth.uid() in (g.host, g.guest)
-    and (g.status in ('invited', 'building', 'playing') or g.updated_at > now() - interval '30 days')
+    and (g.status in ('invited', 'building', 'playing', 'between') or g.updated_at > now() - interval '30 days')
     and g.status not in ('declined', 'cancelled');
 $$;
 

@@ -548,11 +548,13 @@
 
   let ripping = false;
   let ripDone = null; // set when another feature (Pack Wars) wants the pulled cards back
-  async function ripPack(set, type, onDone) {
+  let ripBlind = false; // Pack Wars: rip it, but don't look at the cards
+  async function ripPack(set, type, onDone, opts) {
     const cost = costFor(type);
     if (ripping || state.points < cost) return;
     ripping = true;
     ripDone = onDone || null;
+    ripBlind = !!(opts && opts.blind);
     const ov = $('#packOverlay');
     const stage = $('#packStage');
     ov.classList.remove('hidden');
@@ -627,13 +629,20 @@
           <div class="pack-type">${ODDS[type].name}</div>
         </div>
       </div>
-      <p class="hint">Tap the pack to rip it open</p>`;
+      <p class="hint">${ripBlind ? 'Tap to rip it open. No peeking: the cards go straight into your deck, face down.' : 'Tap the pack to rip it open'}</p>`;
     const pack = $('#pack');
     pack.onclick = async () => {
       pack.onclick = null;
       pack.classList.add('ripping');
       if (navigator.vibrate) navigator.vibrate(30);
       await sleep(650);
+      if (ripBlind && ripDone) {
+        $('#packOverlay').classList.add('hidden');
+        ripping = false;
+        const cb = ripDone;
+        ripDone = null;
+        return cb(pulls);
+      }
       revealCards(set, pulls, value, type);
     };
   }

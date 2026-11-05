@@ -15,7 +15,9 @@
   const ZONES = ['library', 'hand', 'battlefield', 'graveyard', 'exile'];
   const START_LIFE = 20;
   const HAND = 7;
-  const DECK_TARGET = 30;
+  const DECK_TARGET = 30; // cutting to 30 after adding a second pack (official variant)
+  // Official Pack Wars / Mini-Master: add three of each basic land to the pack.
+  const PACK_WARS_BASICS = { Plains: 3, Island: 3, Swamp: 3, Mountain: 3, Forest: 3 };
   const BASIC_COLORS = { Plains: 'W', Island: 'U', Swamp: 'B', Mountain: 'R', Forest: 'G' };
 
   const mini = (c) => ({
@@ -66,7 +68,7 @@
    */
   function newPlayer(packCards, basics, basicArt, rand) {
     rand = rand || Math.random;
-    const s = { life: START_LIFE, mulligans: 0, cards: {}, zones: { library: [], hand: [], battlefield: [], graveyard: [], exile: [] } };
+    const s = { life: START_LIFE, mulligans: 0, bottomOwed: 0, cards: {}, zones: { library: [], hand: [], battlefield: [], graveyard: [], exile: [] } };
     let n = 0;
     const add = (c, foil) => {
       const id = 'c' + ++n;
@@ -112,6 +114,8 @@
     }
     if (to === 'library' && where !== 'bottom') s.zones.library.unshift(id);
     else s.zones[to].push(id);
+    // London mulligan: putting cards from your hand on the bottom pays off what you owe.
+    if (from === 'hand' && to === 'library' && where === 'bottom' && s.bottomOwed > 0) s.bottomOwed -= 1;
     return true;
   }
 
@@ -136,13 +140,14 @@
     return s.life;
   }
 
-  /** Mulligan: shuffle your hand away and draw one fewer card each time. */
+  /** London mulligan: shuffle your hand back, draw 7, then put one card on the bottom per mulligan. */
   function mulligan(s, rand) {
     s.zones.library.push(...s.zones.hand);
     s.zones.hand = [];
     shuffle(s, rand);
     s.mulligans += 1;
-    draw(s, Math.max(0, HAND - s.mulligans));
+    draw(s, HAND);
+    s.bottomOwed = Math.min(s.mulligans, HAND);
   }
 
   function mill(s, n) {
@@ -157,6 +162,7 @@
       hand: s.zones.hand.length,
       library: s.zones.library.length,
       mulligans: s.mulligans,
+      bottomOwed: s.bottomOwed || 0,
       battlefield: s.zones.battlefield.map(show),
       graveyard: s.zones.graveyard.map(show),
       exile: s.zones.exile.map(show),
@@ -166,7 +172,7 @@
   const isLand = (card) => /Land/.test((card && card.type) || '');
 
   const api = {
-    ZONES, START_LIFE, HAND, DECK_TARGET,
+    ZONES, START_LIFE, HAND, DECK_TARGET, PACK_WARS_BASICS,
     suggestBasics, newPlayer, zoneOf, draw, shuffle, move, toggleTap, untapAll, addCounter, changeLife, mulligan, mill, publicView, isLand,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

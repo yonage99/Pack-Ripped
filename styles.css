@@ -427,3 +427,19 @@ ol.steps b { color: var(--text); }
 .result.lose { background: rgba(255, 107, 107, 0.12); }
 .result h2 { margin-bottom: 8px; }
 .pass-screen { text-align: center; padding: 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.deck-stack { position: relative; width: 120px; height: 168px; margin: 16px auto; }
+.deck-stack .cardback { position: absolute; inset: 0; border-radius: 8px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5); }
+.deck-stack .cardback:nth-child(1) { transform: rotate(-6deg); }
+.deck-stack .cardback:nth-child(2) { transform: rotate(4deg); }
+.deck-stack span {
+  position: absolute; right: -10px; bottom: -10px; background: var(--accent); color: #1b1020; font-weight: 800;
+  border-radius: 99px; padding: 4px 10px;
+}
+.big-score { font-size: 22px; font-weight: 800; margin: 6px 0; }
+.pw-score { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.pw-score span { flex: 1; }
+.pw-score b { color: var(--text); }
+.chip { background: var(--panel2); border: 1px solid #3b3258; border-radius: 99px; padding: 3px 10px; font-size: 12px; color: var(--accent2); }
+.owe { background: rgba(255, 179, 71, 0.15); border: 1px solid rgba(255, 179, 71, 0.5); border-radius: 10px; padding: 8px 10px; font-size: 13px; }
+small.block { display: block; font-weight: 500; font-size: 12px; margin-top: 2px; }
+.btn:disabled small.block { color: var(--muted); }
