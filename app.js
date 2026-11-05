@@ -6,7 +6,7 @@
   const API = 'https://api.scryfall.com';
   const STORE_KEY = 'packripped:v1';
   const SETS_KEY = 'packripped:sets';
-  const POOL_PREFIX = 'packripped:pool:';
+  const POOL_PREFIX = 'packripped:pool2:'; // v2 adds Commander data to cards
   const RARITY_ORDER = { mythic: 4, rare: 3, uncommon: 2, common: 1 };
 
   const DEFAULT_TASKS = [
@@ -53,6 +53,7 @@
     checkin: { last: null, streak: 0 },
     collection: {}, // id -> { n, f, firstAt, card }
     history: [],
+    decks: [],
   });
 
   let state = Object.assign(defaultState(), lsGet(STORE_KEY) || {});
@@ -107,6 +108,7 @@
     if (v === 'open') loadSets();
     if (v === 'collection') renderCollection();
     if (v === 'earn') renderEarn();
+    if (v === 'decks') window.PRDecks && window.PRDecks.render();
     window.scrollTo(0, 0);
   }
 
@@ -400,6 +402,7 @@
       basic: /Basic Land/.test(c.type_line || ''),
       uri: c.scryfall_uri,
       treat: treatment(c),
+      ...window.Commander.cardFlags(c),
     };
   }
 
@@ -860,6 +863,19 @@
       if ($('#view-earn').classList.contains('active')) renderEarn();
     } else save();
   });
+
+  // Drop card pools cached by older versions.
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('packripped:pool:'))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {}
+
+  // Shared helpers for decks.js
+  window.PR = {
+    get state() { return state; },
+    save, scry, esc, toast, dialog, cardPrice, showCard, cap, money, slimCard, API, showView,
+  };
 
   renderPoints();
   renderEarn();

@@ -19,6 +19,10 @@ added to your collection.
     12 foils, 5 rares/mythics, including the set's real extended-art,
     borderless and showcase versions. Contents vary by set, so this uses the
     typical layout.
+- **Commander deck builder**: build 100-card decks using only cards you own,
+  plus unlimited basic lands (Plains, Island, Swamp, Mountain, Forest, Wastes).
+  Checks commander eligibility, partners/Backgrounds, color identity,
+  singleton, and the Commander ban list. Copy the decklist for Moxfield or Archidekt.
 - **Collection** with copies, foils, market prices, filters, and pack history.
 - Installable on your phone's home screen. Backup and restore by copy/paste.
 
