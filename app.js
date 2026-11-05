@@ -615,6 +615,7 @@
   let ripBlind = false; // Pack Wars: rip it, but don't look at the cards
   let ripRandomPack = false; // the 50-point random pack
   const RANDOM_COST = 50;
+  const RANDOM_COLLECTOR_CHANCE = 0.2; // 1 in 5 random packs is a Collector Booster (when the set has them)
   async function ripPack(set, type, onDone, opts) {
     const cost = opts && opts.cost != null ? opts.cost : costFor(type);
     if (ripping || state.points < cost) return;
@@ -849,8 +850,12 @@
     if (state.points < RANDOM_COST) return toast(`You need ${RANDOM_COST} ◆ for a random pack`);
     if (!sets) await loadSets();
     if (!sets || !sets.length) return toast("Couldn't load the set list. Check your connection.");
-    const set = sets[Math.floor(Math.random() * sets.length)];
-    ripPack(set, boosterTypeFor(set.released), null, { cost: RANDOM_COST, random: true, tries: tries || 0 });
+    // Roll the pack type first, so 1 in 5 random packs really is a Collector Booster.
+    const collector = Math.random() < RANDOM_COLLECTOR_CHANCE;
+    const pool = collector ? sets.filter((x) => hasCollector(x.released)) : sets;
+    const set = pool[Math.floor(Math.random() * pool.length)];
+    const type = collector ? 'collector' : boosterTypeFor(set.released);
+    ripPack(set, type, null, { cost: RANDOM_COST, random: true, tries: tries || 0 });
   }
   $('#openRandom').addEventListener('click', () => ripRandom());
 
