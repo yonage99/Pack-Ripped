@@ -174,11 +174,32 @@
     return null;
   }
 
-  function openBag(brand) {
+  /** Pick from every brand at once: roll the rarity, then any item of that rarity. */
+  function pickAll(d) {
+    const all = d.brands.flatMap((brand) => brand.items.map((item) => ({ brand, item })));
+    if (!all.length) return null;
+    let x = Math.random();
+    let tier = 'common';
+    for (const [t, p] of Object.entries(ODDS)) {
+      if ((x -= p) < 0) {
+        tier = t;
+        break;
+      }
+    }
+    const order = tier === 'super' ? ['super', 'rare', 'common'] : tier === 'rare' ? ['rare', 'common', 'super'] : ['common', 'rare', 'super'];
+    for (const t of order) {
+      const list = all.filter((x) => x.item.rarity === t);
+      if (list.length) return list[Math.floor(Math.random() * list.length)];
+    }
+    return null;
+  }
+
+  function openBag() {
     const d = data();
-    if (!brand.items.length) return toast('Add some items to this brand first');
-    if (PR.state.points < d.bagCost) return toast(`You need ${d.bagCost} ◆ for a blind bag`);
-    const item = pick(brand);
+    const got = pickAll(d);
+    if (!got) return toast('Add some squishies first');
+    if (PR.state.points < d.bagCost) return toast(`You need ${d.bagCost} ◆ to spin`);
+    const { brand, item } = got;
     const card = cardFor(brand, item);
     // Pay & record first, so closing the app mid-reveal doesn't lose it.
     PR.state.points -= d.bagCost;
@@ -188,14 +209,14 @@
     e.card = card;
     e.n += 1;
     e.lastAt = Date.now();
-    PR.state.history.unshift({ at: Date.now(), set: card.set, setName: `${brand.name} blind bag`, type: 'squishy', game: 'squishy', value: 0, best: card.name, cards: [[card.id, 0]] });
+    PR.state.history.unshift({ at: Date.now(), set: card.set, setName: 'Squishy Wheel', type: 'squishy', game: 'squishy', value: 0, best: card.name, cards: [[card.id, 0]] });
     PR.state.history = PR.state.history.slice(0, 30);
     PR.save();
     PR.renderPoints(true);
     dialog(
       `${
-        brand.style === 'spinner'
-          ? `<div class="spinner-wrap" id="sqBag"><div class="spin-pointer">▼</div><div class="wheel" id="sqWheel"><span>${esc(brand.name.split(' ')[0])}</span></div></div>
+        true
+          ? `<div class="spinner-wrap" id="sqBag"><div class="spin-pointer">▼</div><div class="wheel" id="sqWheel"><span>Squish</span></div></div>
       <p class="hint" id="sqHint">Tap the wheel to spin</p>`
           : `<div class="bag" id="sqBag"><div class="bag-top"></div><div class="bag-body"><span>?</span><b>${esc(brand.name)}</b><small>Blind bag</small></div></div>
       <p class="hint" id="sqHint">Tap the bag to open it</p>`
@@ -209,7 +230,7 @@
       (close) => {
         document.getElementById('sqBag').onclick = () => {
           const bag = document.getElementById('sqBag');
-          if (brand.style === 'spinner') return spin(bag);
+          return spin(bag); // every squishy now comes from the one wheel
           bag.classList.add('opening');
           if (window.PRSound) window.PRSound.shake();
           if (window.PRFx) window.PRFx.burstFrom(bag, { count: 120 });
@@ -253,7 +274,7 @@
         };
         document.getElementById('sqAgain').onclick = () => {
           close();
-          openBag(brand);
+          openBag();
         };
       }
     );
@@ -266,8 +287,10 @@
     const owned = (brand) => brand.items.filter((i) => PR.state.collection[`sq:${brand.id}:${i.id}`]).length;
     el.innerHTML = `
       <div class="card-panel">
-        <h2>Squishies</h2>
-        <p class="muted small">Real products: NeeDoh and RMS Mystery Dumplings come preloaded, with real store photos where available and a simple drawing for the rest. Tap Edit to add or change items, or add your own brands. Each spin or bag gives a random item: common 70%, rare 25%, super rare 5%. Rarities are based on demand (purchase limits, sold-out items), not official odds. Items you add yourself get a simple drawing.</p>
+        <h2>🎡 Squishy Wheel</h2>
+        <p class="muted small">One spin, every brand: ${d.brands.reduce((n, b) => n + b.items.length, 0)} squishies from ${d.brands.map((b) => esc(b.name)).join(', ')}. Common 70%, rare 25%, super rare 5%.</p>
+        <button class="btn primary wide" id="sqSpinAll" ${d.brands.some((b) => b.items.length) && PR.state.points >= d.bagCost ? '' : 'disabled'}>Spin the wheel (${d.bagCost} ◆)</button>
+        <p class="muted small" style="margin-top:10px">Real products, with real store photos where available and a simple drawing for the rest. Rarities are based on demand (purchase limits, sold-out items), not official odds. Tap Edit on a brand to add or change items, or add your own brand below.</p>
       </div>
       ${d.brands
         .map((b) => {
@@ -293,10 +316,7 @@
                 : `<div class="sq-strip">${b.items
                     .slice(0, 8)
                     .map((i) => `<img src="${esc(i.img || tile(i.name, i.rarity, i.shape))}" alt="${esc(i.name)}" class="${PR.state.collection[`sq:${b.id}:${i.id}`] ? '' : 'unowned'}">`)
-                    .join('')}</div>
-                  <button class="btn primary wide" data-a="open" ${b.items.length && PR.state.points >= d.bagCost ? '' : 'disabled'}>${
-                    b.items.length ? `${b.style === 'spinner' ? '🎡 Spin the wheel' : 'Open a blind bag'} (${d.bagCost} ◆)` : 'Tap Edit to add items'
-                  }</button>`
+                    .join('')}</div>`
             }
           </div>`;
         })
@@ -315,7 +335,7 @@
         editing = editing === brand.id ? null : brand.id;
         render();
       });
-      on('open', 'click', () => openBag(brand));
+
       on('add', 'submit', (e) => {
         e.preventDefault();
         const f = e.target;
@@ -373,6 +393,7 @@
         )
       );
     });
+    document.getElementById('sqSpinAll').onclick = () => openBag();
     document.getElementById('sqAddBrand').onsubmit = (e) => {
       e.preventDefault();
       const name = document.getElementById('sqBrandName').value.trim();
