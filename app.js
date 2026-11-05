@@ -389,6 +389,35 @@
       'Bonus grows +5 each day of your streak (max 50).';
   }
   const checkinBonus = (streak) => Math.min(50, 10 + (streak - 1) * 5);
+  // ---------- gift codes ----------
+  // Only a SHA-256 fingerprint of each code is stored here, so the codes can't be read
+  // from the app's files. Each code works once per phone.
+  const GIFT_CODES = {
+    '80fa5fbee6c8ed968b19d64f60eb6d876b46a02d488c5ea3a3219068b00ebdbe': { id: 'g1', points: 1000 },
+  };
+  async function sha256(text) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  $('#giftForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = $('#giftCode').value.trim().toUpperCase().replace(/\s+/g, '');
+    if (!code) return;
+    let gift = null;
+    try {
+      gift = GIFT_CODES[await sha256(code)];
+    } catch {
+      return toast("This browser can't check codes");
+    }
+    if (!gift) return toast("That code isn't valid");
+    state.giftsUsed = state.giftsUsed || [];
+    if (state.giftsUsed.includes(gift.id)) return toast('You already used that code');
+    state.giftsUsed.push(gift.id);
+    addPoints(gift.points, 'gift code');
+    $('#giftCode').value = '';
+    if (window.PRSound) window.PRSound.dings();
+  });
+
   $('#checkinBtn').addEventListener('click', () => {
     const c = state.checkin;
     if (c.last === today()) return;

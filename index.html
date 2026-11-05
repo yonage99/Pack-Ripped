@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="stylesheet" href="styles.css?v=23">
+  <link rel="stylesheet" href="styles.css?v=24">
 </head>
 <body>
   <header class="topbar">
@@ -67,7 +67,16 @@
         <button class="btn wide" id="checkinBtn">Claim daily bonus</button>
         <p class="muted small" id="streakText"></p>
       </div>
-      <p class="muted small center-text">Pack Ripped · version 23</p>
+      <div class="card-panel">
+        <details class="manual" style="margin-top:0">
+          <summary>Have a gift code?</summary>
+          <form id="giftForm" class="row">
+            <input id="giftCode" placeholder="GIFT-XXXX-XXXX" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="30">
+            <button class="btn primary" type="submit" style="flex:none">Redeem</button>
+          </form>
+        </details>
+      </div>
+      <p class="muted small center-text">Pack Ripped · version 24</p>
     </section>
 
     <!-- OPEN -->
@@ -181,19 +190,19 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script src="sounds.js?v=23"></script>
-  <script src="odds.js?v=23"></script>
-  <script src="pokemon.js?v=23"></script>
-  <script src="commander.js?v=23"></script>
-  <script src="app.js?v=23"></script>
-  <script src="decks.js?v=23"></script>
-  <script src="config.js?v=23"></script>
-  <script src="vendor/supabase-2.119.0.js?v=23"></script>
-  <script src="social.js?v=23"></script>
-  <script src="trades.js?v=23"></script>
-  <script src="squishies.js?v=23"></script>
-  <script src="packwars-engine.js?v=23"></script>
-  <script src="packwars.js?v=23"></script>
+  <script src="sounds.js?v=24"></script>
+  <script src="odds.js?v=24"></script>
+  <script src="pokemon.js?v=24"></script>
+  <script src="commander.js?v=24"></script>
+  <script src="app.js?v=24"></script>
+  <script src="decks.js?v=24"></script>
+  <script src="config.js?v=24"></script>
+  <script src="vendor/supabase-2.119.0.js?v=24"></script>
+  <script src="social.js?v=24"></script>
+  <script src="trades.js?v=24"></script>
+  <script src="squishies.js?v=24"></script>
+  <script src="packwars-engine.js?v=24"></script>
+  <script src="packwars.js?v=24"></script>
   <script>document.getElementById('openPackWars').onclick = () => window.PR.showView('packwars');</script>
 </body>
 </html>
