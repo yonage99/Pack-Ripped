@@ -15,52 +15,67 @@
   let editing = null; // brand id being edited
 
   /*
-   * Starter lists from what's out there (Nov 2026): RMS USA's Mystery Dumpling blind
-   * boxes (Five Below), and Schylling's NeeDoh line. Product names come from RMS press
-   * releases, Target/Walmart listings and resale listings. The rarities are this app's,
-   * based on what collectors hunt for and resell high, not official odds.
+   * Real products with real photos (Nov 2026). Names and photos come from toy stores'
+   * own product listings (Toot Toot Toys, Amazeum Store, Flying Pig Toys, Pacifier
+   * Kids), shown straight from the stores' image server. Rarities are this app's,
+   * based on demand (purchase limits, sold-out items), not official odds.
    */
   const CATALOG = [
     {
       name: 'RMS Mystery Dumpling', match: ['rms'], style: 'spinner',
       items: [
-        ['Sherbet Dumpling', 'common'], ['Neon Dumpling', 'common'], ['Shark Dumpling', 'common'],
-        ['Seashell Dumpling', 'common'], ['Sunset Dumpling', 'common'], ['Party Confetti Dumpling', 'common'],
-        ['Stuffed Bun Dumpling', 'common'], ['Water-Filled Dumpling', 'common'],
-        ['Color Changing Dumpling', 'rare'], ['Galaxy Dumpling', 'rare'], ['Starlight Dumpling', 'rare'],
-        ['Spooky Ghost Dumpling', 'rare'], ['Green Holographic Dumpling', 'rare'], ['Purple Holographic Dumpling', 'rare'],
-        ['Ultra-Rare Glitter Dumpling', 'super'], ['Golden Ticket Dumpling', 'super'],
-      ].map(([n, r]) => [n, r, 'dumpling']),
+        ["Mystery Squishy Dumpling: Pink Glitter Edition", 'common', 'dumpling', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-08-19T130702.142.jpg?v=1787116080&width=500"],
+        ["Rainbow Mystery Bao Bun", 'rare', 'dumpling', "https://cdn.shopify.com/s/files/1/0281/8056/files/product_photo_-_white_background_-_2026-05-05T014651.864.jpg?v=1777924062&width=500"],
+      ],
     },
     {
       name: 'NeeDoh', match: ['nee-doh', 'needoh', 'nee doh'], style: 'bag',
       items: [
-        ['The Groovy Glob', 'common', 'ball'], ['Gumdrop', 'common', 'drop'], ['Nice Cube', 'common', 'cube'],
-        ['Snowball Crunch', 'common', 'ball'], ['Teenie NeeDoh', 'common', 'ball'], ['Dohnut', 'common', 'donut'],
-        ['Groovy Fruit', 'common', 'drop'],
-        ['Nice Cube Swirl', 'rare', 'cube'], ['Nice Cube Glitter & Glow', 'rare', 'cube'], ['Jellyfish', 'rare', 'drop'],
-        ['Fuzzball', 'rare', 'ball'], ['Dream Drop', 'rare', 'drop'], ['Teenie Cool Cats', 'rare', 'ball'],
-        ['Nice Ice Baby', 'rare', 'cube'], ['Nice Sicle', 'rare', 'drop'],
-        ['Nice Berg', 'super', 'cube'], ['Atomic NeeDoh', 'super', 'ball'],
+        ["Teenie Fuzz Ball (multi-pack)", 'common', 'ball', "https://cdn.shopify.com/s/files/1/0570/3537/files/needoh_teenie_fuzz_ball_multipack_1_777ea53d-2134-41e1-aeb5-8ac2ba4c6cae.webp?v=1769058110&width=500"],
+        ["Teenie Nice Ice Baby (multi-pack)", 'common', 'ball', "https://cdn.shopify.com/s/files/1/0570/3537/files/needoh_teenie_nice_ice_baby_multipack_1.webp?v=1770161825&width=500"],
+        ["Teenie Cool Kittens (multi-pack)", 'common', 'ball', "https://cdn.shopify.com/s/files/1/0286/1203/4642/files/coolkittens.jpg?v=1770934739&width=500"],
+        ["Teenie Hot Shots", 'common', 'ball', "https://cdn.shopify.com/s/files/1/0286/1203/4642/files/HOTSHOTTEENIENEEDOH.jpg?v=1773788702&width=500"],
+        ["Jelly Hops", 'common', 'ball', "https://cdn.shopify.com/s/files/1/0286/1203/4642/files/jellyhops.jpg?v=1770934914&width=500"],
+        ["Candy Swirl Nice Cube", 'rare', 'ball', "https://cdn.shopify.com/s/files/1/0286/1203/4642/files/candy1.jpg?v=1770934575&width=500"],
+        ["Squishmas Polar Glow Penguins", 'rare', 'ball', "https://cdn.shopify.com/s/files/1/0286/1203/4642/files/penguin_f0eed820-7c69-49e4-b9e3-b4d71267752f.jpg?v=1770934516&width=500"],
+        ["Mello Mallo", 'rare', 'ball', "https://cdn.shopify.com/s/files/1/0628/9886/4365/files/IMG-2239.webp?v=1741806162&width=500"],
+        ["Disney Stitch Micro Teenies", 'rare', 'ball', "https://cdn.shopify.com/s/files/1/0628/9886/4365/files/IMG_1180_57d26dcc-7252-4691-a0d8-236aa2a18dc0.webp?v=1740244620&width=500"],
+        ["Hello Kitty and Friends Micro Teenies", 'rare', 'ball', "https://cdn.shopify.com/s/files/1/0628/9886/4365/files/IMG_0924.jpg?v=1738519009&width=500"],
+        ["Nice Cube", 'super', 'ball', "https://cdn.shopify.com/s/files/1/0570/3537/files/NCBND-NeeDoh-Nice-Cube-3QR-Group.jpg?v=1689949384&width=500"],
+        ["Galactic Glow Dream Drop", 'super', 'ball', "https://cdn.shopify.com/s/files/1/0628/9886/4365/files/czki95otooue3r6eiceq.jpg?v=1775522245&width=500"],
       ],
     },
   ];
+  // Items from the first starter list (names only, no real photos): removed in favor of the real ones.
+  const OLD_CATALOG = ['Sherbet Dumpling', 'Neon Dumpling', 'Shark Dumpling', 'Seashell Dumpling', 'Sunset Dumpling',
+    'Party Confetti Dumpling', 'Stuffed Bun Dumpling', 'Water-Filled Dumpling', 'Color Changing Dumpling', 'Galaxy Dumpling',
+    'Starlight Dumpling', 'Spooky Ghost Dumpling', 'Green Holographic Dumpling', 'Purple Holographic Dumpling',
+    'Ultra-Rare Glitter Dumpling', 'Golden Ticket Dumpling', 'The Groovy Glob', 'Gumdrop', 'Nice Cube', 'Snowball Crunch',
+    'Teenie NeeDoh', 'Dohnut', 'Groovy Fruit', 'Nice Cube Swirl', 'Nice Cube Glitter & Glow', 'Jellyfish', 'Fuzzball',
+    'Dream Drop', 'Teenie Cool Cats', 'Nice Ice Baby', 'Nice Sicle', 'Nice Berg', 'Atomic NeeDoh'].map((n) => n.toLowerCase());
 
   function data() {
     const s = PR.state;
     if (!s.squish) s.squish = { bagCost: 50, brands: [] };
-    if (!s.squish.catalogV1) {
+    if (!s.squish.catalogV2) {
       for (const c of CATALOG) {
         let b = s.squish.brands.find((x) => c.match.some((m) => x.name.toLowerCase().replace(/[^a-z ]/g, '').startsWith(m.replace(/[^a-z ]/g, ''))));
         if (!b) s.squish.brands.push((b = { id: uid(), name: c.name, items: [] }));
         b.name = c.name;
         b.style = c.style;
-        for (const [name, rarity, shape] of c.items)
-          if (!b.items.some((i) => i.name.toLowerCase() === name.toLowerCase())) b.items.push({ id: uid(), name, rarity, shape });
+        // Remove the earlier made-up/name-only items, including copies already opened.
+        for (const i of b.items.filter((x) => !x.img && OLD_CATALOG.includes(x.name.toLowerCase()))) delete s.collection[`sq:${b.id}:${i.id}`];
+        b.items = b.items.filter((x) => x.img || !OLD_CATALOG.includes(x.name.toLowerCase()));
+        for (const [name, rarity, shape, img] of c.items) {
+          const have = b.items.find((i) => i.name.toLowerCase() === name.toLowerCase());
+          if (have) Object.assign(have, { img, rarity });
+          else b.items.push({ id: uid(), name, rarity, shape, img });
+        }
       }
+      s.squish.catalogV2 = true;
+      s.squish.catalogV1 = true;
       // RMS first, then NeeDoh, then anything you added.
       s.squish.brands.sort((a, b) => (CATALOG.findIndex((c) => c.name === a.name) + 1 || 99) - (CATALOG.findIndex((c) => c.name === b.name) + 1 || 99));
-      s.squish.catalogV1 = true;
       s.squish.seeded = true;
     }
     return s.squish;
@@ -115,7 +130,7 @@
       rarity: APP_RARITY[item.rarity] || 'common',
       rarityLabel: LABEL[item.rarity] || 'Common',
       type: `${brand.name} squishy`,
-      img: tile(item.name, item.rarity, item.shape),
+      img: item.img || tile(item.name, item.rarity, item.shape),
       usd: 0,
       usdFoil: 0,
       basic: false,
@@ -169,7 +184,7 @@
       <p class="hint" id="sqHint">Tap the bag to open it</p>`
       }
       <div id="sqReveal" class="hidden">
-        <div class="mini squish-big ${card.rarity}"><img src="${card.img}" alt="${esc(card.name)}"></div>
+        <div class="mini squish-big ${card.rarity}"><img src="${esc(card.img)}" alt="${esc(card.name)}"></div>
         <h3>${esc(card.name)} ${isNew ? '<span class="new-tag">NEW</span>' : ''}</h3>
         <p class="muted small"><span class="rarity-dot ${card.rarity}"></span>${card.rarityLabel} · ${esc(brand.name)}</p>
         <div class="row"><button class="btn" id="sqDone">Done</button><button class="btn primary" id="sqAgain" ${PR.state.points >= d.bagCost ? '' : 'disabled'}>Another (${d.bagCost} ◆)</button></div>
@@ -235,7 +250,7 @@
     el.innerHTML = `
       <div class="card-panel">
         <h2>Squishies</h2>
-        <p class="muted small">Real products, names only. RMS Mystery Dumplings and NeeDoh come preloaded with popular editions; tap Edit to add or change items, or add your own brands. Each spin or bag gives a random item: common 70%, rare 25%, super rare 5%. Rarities are based on what collectors hunt for, not official odds, and the pictures are simple stand-ins, not official photos.</p>
+        <p class="muted small">Real products with real photos from toy-store listings: NeeDoh and RMS Mystery Dumplings come preloaded. Tap Edit to add or change items, or add your own brands. Each spin or bag gives a random item: common 70%, rare 25%, super rare 5%. Rarities are based on demand (purchase limits, sold-out items), not official odds. Items you add yourself get a simple drawing.</p>
       </div>
       ${d.brands
         .map((b) => {
@@ -260,7 +275,7 @@
                   <div class="row"><button class="btn" data-a="rename">Rename brand</button><button class="btn danger" data-a="remove">Delete brand</button></div>`
                 : `<div class="sq-strip">${b.items
                     .slice(0, 8)
-                    .map((i) => `<img src="${tile(i.name, i.rarity, i.shape)}" alt="${esc(i.name)}" class="${PR.state.collection[`sq:${b.id}:${i.id}`] ? '' : 'unowned'}">`)
+                    .map((i) => `<img src="${esc(i.img || tile(i.name, i.rarity, i.shape))}" alt="${esc(i.name)}" class="${PR.state.collection[`sq:${b.id}:${i.id}`] ? '' : 'unowned'}">`)
                     .join('')}</div>
                   <button class="btn primary wide" data-a="open" ${b.items.length && PR.state.points >= d.bagCost ? '' : 'disabled'}>${
                     b.items.length ? `${b.style === 'spinner' ? '🎡 Spin the wheel' : 'Open a blind bag'} (${d.bagCost} ◆)` : 'Tap Edit to add items'
