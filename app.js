@@ -17,15 +17,16 @@
     { id: 't3', name: 'Read 20 minutes', points: 300 },
     { id: 't4', name: 'Meditate 10 minutes', points: 200 },
     { id: 't5', name: 'Make your bed', points: 100 },
-    { id: 't6', name: 'Go to Shachris', points: 1000 },
-    { id: 't7', name: 'Learn Mesilas Yesharim', points: 1000 },
-    { id: 't8', name: 'Learn with Meyer', points: 1000 },
-    { id: 't9', name: 'Go to Mincha', points: 1000 },
-    { id: 't10', name: 'Learn with Sruli', points: 1000 },
-    { id: 't11', name: 'Go to Seder', points: 1000 },
-    { id: 't12', name: 'Go to Mariv', points: 1000 },
-    { id: 't13', name: 'Shmira', points: 5000 },
   ];
+  // Ideas offered when adding a goal (tap to use).
+  const GOAL_IDEAS = [
+    'Workout 30 minutes', 'Read 20 minutes', 'Homework done', 'Learn 30 minutes', 'Pray', 'Practice an instrument',
+    'Clean my room', 'Help at home', 'No phone for an hour', 'Go to bed on time', 'Healthy breakfast', 'Drink 8 glasses of water',
+    'Call a friend or family member', 'Make your bed', 'Meditate 10 minutes', 'Walk the dog',
+  ];
+  const GOAL_POINTS = [100, 250, 500, 1000, 2500];
+  // Built-in goals given out by versions 13–31; removed below where they were never used.
+  const RETIRED_TASKS = { t6: 1000, t7: 1000, t8: 1000, t9: 1000, t10: 1000, t11: 1000, t12: 1000, t13: 5000 };
   const OLD_TASK_POINTS = { t1: 50, t2: 20, t3: 30, t4: 20, t5: 10 };
   const MAX_TASK_POINTS = 5000;
 
@@ -95,9 +96,16 @@
       if (backpay) s.taskBackpay = (s.taskBackpay || 0) + backpay;
     }
     s.tasksV2 = true;
-    // Task update 3: Shmira.
-    if (saved && !saved.tasksV3) addMissingTasks(s, ['t13']);
     s.tasksV3 = true;
+    // Goals are personal: drop built-in goals from older versions that were never checked off
+    // (and still have their original points). Anything you've used or changed stays.
+    if (saved && !saved.tasksV4) {
+      // If any of them was ever checked off, this person uses them: keep them all.
+      const used = (s.tasks || []).some((t) => RETIRED_TASKS[t.id] && t.doneOn);
+      if (!used) s.tasks = (s.tasks || []).filter((t) => !(RETIRED_TASKS[t.id] && t.points === RETIRED_TASKS[t.id]));
+    }
+    s.tasksV4 = true;
+    if (!saved) s.needsGoalSetup = true; // brand-new player: offer to pick goals
     return s;
   }
 
@@ -360,6 +368,84 @@
       }
     );
   }
+  function addGoalSheet() {
+    let pts = 250;
+    dialog(
+      `<h3>Add a goal</h3>
+      <p class="muted small">Your goals are private: they stay on this phone. Friends never see them.</p>
+      <form id="agForm" class="col">
+        <input id="agName" placeholder="What do you want to do every day?" maxlength="60" required>
+        <div class="chips" id="agIdeas">${GOAL_IDEAS.filter((g) => !state.tasks.some((t) => t.name.toLowerCase() === g.toLowerCase()))
+          .map((g) => `<button type="button" class="chip-btn" data-idea="${esc(g)}">${esc(g)}</button>`)
+          .join('')}</div>
+        <p class="muted small" style="text-align:left;margin:4px 0 0">Points for finishing it</p>
+        <div class="chips" id="agPts">${GOAL_POINTS.map((p) => `<button type="button" class="chip-btn ${p === pts ? 'on' : ''}" data-p="${p}">${p.toLocaleString()} ◆</button>`).join('')}
+          <input id="agCustom" type="number" inputmode="numeric" min="1" max="${MAX_TASK_POINTS}" placeholder="Other" class="chip-input"></div>
+        <div class="row"><button type="button" class="btn" id="agCancel">Cancel</button><button class="btn primary" type="submit">Add goal</button></div>
+      </form>`,
+      (close) => {
+        $('#agCancel').onclick = close;
+        document.querySelectorAll('#agIdeas [data-idea]').forEach((b) => (b.onclick = () => ($('#agName').value = b.dataset.idea)));
+        document.querySelectorAll('#agPts [data-p]').forEach(
+          (b) =>
+            (b.onclick = () => {
+              pts = Number(b.dataset.p);
+              $('#agCustom').value = '';
+              document.querySelectorAll('#agPts [data-p]').forEach((x) => x.classList.toggle('on', x === b));
+            })
+        );
+        $('#agCustom').oninput = () => document.querySelectorAll('#agPts [data-p]').forEach((x) => x.classList.remove('on'));
+        $('#agForm').onsubmit = (e) => {
+          e.preventDefault();
+          const name = $('#agName').value.trim();
+          if (!name) return;
+          const custom = parseInt($('#agCustom').value, 10);
+          const points = Math.min(MAX_TASK_POINTS, Math.max(1, custom || pts));
+          state.tasks.push({ id: 't' + Date.now(), name, points, doneOn: null });
+          save();
+          close();
+          renderTasks();
+          toast(`Added: ${name} (+${points.toLocaleString()} ◆)`);
+        };
+      }
+    );
+  }
+  $('#addGoalBtn').addEventListener('click', addGoalSheet);
+
+  /** First launch: pick the goals you want (all optional, editable later). */
+  function goalSetup() {
+    const picked = new Set(['Workout 30 minutes', 'Read 20 minutes', 'Make your bed']);
+    const draw = () => {
+      $('#dialogBox').querySelectorAll('[data-g]').forEach((b) => b.classList.toggle('on', picked.has(b.dataset.g)));
+      $('#gsGo').textContent = picked.size ? `Use ${picked.size} goal${picked.size === 1 ? '' : 's'}` : 'Skip for now';
+    };
+    dialog(
+      `<h3>Pick your daily goals</h3>
+      <p class="muted small">Finish them each day to earn ◆ for packs. They're private to you, and you can change them anytime on the Earn tab.</p>
+      <div class="chips">${GOAL_IDEAS.map((g) => `<button type="button" class="chip-btn" data-g="${esc(g)}">${esc(g)}</button>`).join('')}</div>
+      <p class="muted small">Don't see yours? Add your own with “+ Add a goal” after this.</p>
+      <button class="btn primary wide" id="gsGo">Use goals</button>`,
+      (close) => {
+        $('#dialogBox').querySelectorAll('[data-g]').forEach(
+          (b) =>
+            (b.onclick = () => {
+              picked.has(b.dataset.g) ? picked.delete(b.dataset.g) : picked.add(b.dataset.g);
+              draw();
+            })
+        );
+        $('#gsGo').onclick = () => {
+          const pointsFor = (g) => (DEFAULT_TASKS.find((d) => d.name === g) || {}).points || 250;
+          state.tasks = [...picked].map((g, i) => ({ id: 'g' + Date.now() + i, name: g, points: pointsFor(g), doneOn: null }));
+          delete state.needsGoalSetup;
+          save();
+          close();
+          renderTasks();
+        };
+        draw();
+      }
+    );
+  }
+
   $('#editTasksBtn').addEventListener('click', () => {
     editingTasks = !editingTasks;
     renderTasks();
@@ -1228,6 +1314,7 @@
     if (paid > 0) setTimeout(() => toast(`+${paid} ◆: today's steps re-counted at the new rate (10 steps = 1 ◆)`), 500);
   }
   renderEarn();
+  if (state.needsGoalSetup) setTimeout(goalSetup, 1200);
   if (!lsGet(STORE_KEY)) {
     save();
     setTimeout(() => toast('Welcome! Here are 100 ◆ for your first pack.'), 400);

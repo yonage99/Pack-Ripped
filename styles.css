@@ -518,3 +518,10 @@ small.block { display: block; font-weight: 500; font-size: 12px; margin-top: 2px
 .squish-big img, .sq-strip img { background: #fff; object-fit: contain; }
 .mini img[src*="cdn.shopify.com"] { background: #fff; object-fit: contain; }
 .mini img[src*="bigcommerce.com"] { background: #fff; object-fit: contain; }
+
+/* Goals */
+.add-goal { margin-top: 10px; border-style: dashed; color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; justify-content: center; }
+.chip-btn { background: var(--panel2); border: 1px solid #3b3258; border-radius: 99px; padding: 7px 12px; font-size: 14px; color: var(--text); }
+.chip-btn.on { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #1b1020; border-color: transparent; font-weight: 700; }
+.chip-input { width: 90px; padding: 7px 10px; border-radius: 99px; font-size: 14px; }

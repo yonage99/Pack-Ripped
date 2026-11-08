@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="stylesheet" href="styles.css?v=32">
+  <link rel="stylesheet" href="styles.css?v=33">
 </head>
 <body>
   <header class="topbar">
@@ -50,16 +50,17 @@
 
       <div class="card-panel">
         <div class="panel-head">
-          <h2>Daily tasks</h2>
+          <h2>Daily goals</h2>
           <button class="link-btn" id="editTasksBtn">Edit</button>
         </div>
         <ul class="task-list" id="taskList"></ul>
+        <button class="btn wide add-goal" id="addGoalBtn">+ Add a goal</button>
         <form id="addTaskForm" class="add-task hidden">
           <input id="newTaskName" placeholder="New task (e.g. 20 push-ups)" maxlength="60" required>
           <input id="newTaskPts" type="number" inputmode="numeric" min="1" max="5000" value="100" required>
           <button class="btn" type="submit">Add</button>
         </form>
-        <p class="muted small">Tasks reset every day at midnight. Tap Edit to add tasks, or tap a task while editing to change its name or points.</p>
+        <p class="muted small">Your goals are private to this phone and reset every day at midnight. Tap Edit to rename, change points or delete.</p>
       </div>
 
       <div class="card-panel">
@@ -76,7 +77,7 @@
           </form>
         </details>
       </div>
-      <p class="muted small center-text">Pack Ripped · version 32</p>
+      <p class="muted small center-text">Pack Ripped · version 33</p>
     </section>
 
     <!-- OPEN -->
@@ -190,20 +191,20 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script src="sounds.js?v=32"></script>
-  <script src="fx.js?v=32"></script>
-  <script src="odds.js?v=32"></script>
-  <script src="pokemon.js?v=32"></script>
-  <script src="commander.js?v=32"></script>
-  <script src="app.js?v=32"></script>
-  <script src="decks.js?v=32"></script>
-  <script src="config.js?v=32"></script>
-  <script src="vendor/supabase-2.119.0.js?v=32"></script>
-  <script src="social.js?v=32"></script>
-  <script src="trades.js?v=32"></script>
-  <script src="squishies.js?v=32"></script>
-  <script src="packwars-engine.js?v=32"></script>
-  <script src="packwars.js?v=32"></script>
+  <script src="sounds.js?v=33"></script>
+  <script src="fx.js?v=33"></script>
+  <script src="odds.js?v=33"></script>
+  <script src="pokemon.js?v=33"></script>
+  <script src="commander.js?v=33"></script>
+  <script src="app.js?v=33"></script>
+  <script src="decks.js?v=33"></script>
+  <script src="config.js?v=33"></script>
+  <script src="vendor/supabase-2.119.0.js?v=33"></script>
+  <script src="social.js?v=33"></script>
+  <script src="trades.js?v=33"></script>
+  <script src="squishies.js?v=33"></script>
+  <script src="packwars-engine.js?v=33"></script>
+  <script src="packwars.js?v=33"></script>
   <script>document.getElementById('openPackWars').onclick = () => window.PR.showView('packwars');</script>
 </body>
 </html>
