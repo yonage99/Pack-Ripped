@@ -6,4 +6,6 @@ window.PACKRIPPED_CONFIG = {
   supabaseAnonKey: '', // the "anon public" / "publishable" key
   // Usernames are turned into a placeholder email behind the scenes (no email is ever sent).
   usernameEmailDomain: 'users.packripped.app',
+  // Everyone must sign in before using the app (only once the server above is connected).
+  requireSignIn: true,
 };

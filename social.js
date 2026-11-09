@@ -82,6 +82,7 @@
     if (!sb || !me || syncing) return;
     syncing = true;
     try {
+      await rpc('heartbeat').catch(() => {});
       const steps = myStepsToday();
       if (steps > 0) await rpc('log_steps', { p_day: today(), p_steps: steps });
       // Completed trades change this phone's collection (and can free deck slots).
@@ -145,7 +146,9 @@
     try {
       me = await rpc('my_profile');
     } catch {
-      me = null;
+      // No connection: keep you signed in with what the phone knows; it re-checks later.
+      const meta = (data.session.user && data.session.user.user_metadata) || {};
+      me = { username: meta.username || 'you', offline: true };
     }
     if (me) {
       dirty = true;
@@ -189,12 +192,18 @@
       </div>`;
   }
 
-  function renderAuth() {
+  function renderAuth(target) {
+    const host = target || root();
+    const gate = !!target;
     const signup = view.authTab === 'signup';
-    root().innerHTML = `
+    host.innerHTML = `
       <div class="card-panel">
-        <h2>Friends &amp; leaderboard</h2>
-        <p class="muted small">Create an account to add friends, share your collection and decks, and get on the steps leaderboard.</p>
+        <h2>${gate ? 'Welcome! Sign in to play' : 'Friends &amp; leaderboard'}</h2>
+        <p class="muted small">${
+          gate
+            ? 'Create an account (just a username and password) or log in. Your points and cards on this phone stay yours and sync to your account.'
+            : 'Create an account to add friends, share your collection and decks, and get on the steps leaderboard.'
+        }</p>
         <div class="seg">
           <button data-t="signup" class="${signup ? 'on' : ''}">Create account</button>
           <button data-t="login" class="${!signup ? 'on' : ''}">Log in</button>
@@ -209,11 +218,12 @@
             ? 'Usernames: 3 to 20 letters, numbers or _. No email needed. Write your password down: it can’t be reset.'
             : ''
         }</p>
+        <p class="muted small">The app's owner can see usernames and activity (when you're on, packs, cards, steps) to help grow the community. Your daily goals stay private.</p>
       </div>`;
-    root().querySelectorAll('.seg button').forEach(
+    host.querySelectorAll('.seg button').forEach(
       (b) => (b.onclick = () => {
         view.authTab = b.dataset.t;
-        renderAuth();
+        renderAuth(target);
       })
     );
     document.getElementById('authForm').onsubmit = async (e) => {
@@ -241,7 +251,9 @@
         if (!me) throw new Error('Signed in, but your profile is missing. Was supabase/setup.sql run?');
         toast(signup ? `Welcome, @${me.username}!` : `Hi @${me.username}`);
         view.mode = 'home';
-        render();
+        view.checked = true;
+        if (gate) hideGate();
+        if (document.getElementById('view-friends').classList.contains('active')) render();
       } catch (err) {
         msg.textContent = friendlyError(err);
         go.disabled = false;
@@ -259,6 +271,7 @@
         </div>
         <p class="muted small" id="frSync">${lastSync ? 'Synced ' + ago(lastSync) : 'Syncing…'}</p>
         <p class="muted small">Your friends can see your collection, decks and steps.</p>
+        ${me.is_admin ? '<button class="btn wide admin-btn" id="frAdmin">🛡 Admin dashboard</button>' : ''}
       </div>
       <div class="card-panel">
         <div class="panel-head"><h2>🏆 Steps leaderboard</h2></div>
@@ -293,7 +306,10 @@
       overview = null;
       view = { mode: 'home', board: view.board, authTab: 'login', checked: true };
       render();
+      if (gated()) showGate();
     };
+    const adm = document.getElementById('frAdmin');
+    if (adm) adm.onclick = () => renderAdmin();
     document.getElementById('lbPeriod').querySelectorAll('button').forEach(
       (b) => (b.onclick = () => {
         view.board.period = b.dataset.v;
@@ -657,8 +673,99 @@
     };
   }
 
+  // ---------- sign-in gate ----------
+  const gated = () => configured && cfg.requireSignIn !== false;
+
+  function showGate() {
+    let g = document.getElementById('authGate');
+    if (!g) {
+      g = document.createElement('div');
+      g.id = 'authGate';
+      g.className = 'auth-gate';
+      document.body.appendChild(g);
+    }
+    g.innerHTML = `<div class="gate-inner"><div class="brand gate-brand">Pack <span>Ripped</span></div><div id="gateBox"></div></div>`;
+    if (!view.authTab) view.authTab = 'signup';
+    renderAuth(document.getElementById('gateBox'));
+  }
+
+  function hideGate() {
+    const g = document.getElementById('authGate');
+    if (g) g.remove();
+  }
+
+  // ---------- admin dashboard ----------
+  async function renderAdmin(q) {
+    const r = root();
+    r.innerHTML = `<div class="card-panel"><button class="link-btn" id="adBack">‹ Friends</button><h2 style="margin-top:6px">🛡 Admin dashboard</h2><div class="spinner"></div></div>`;
+    document.getElementById('adBack').onclick = () => render();
+    let d;
+    try {
+      d = await rpc('admin_overview');
+    } catch (e) {
+      r.innerHTML = `<div class="card-panel"><button class="link-btn" id="adBack">‹ Friends</button><p class="bad">${esc(friendlyError(e))}</p></div>`;
+      document.getElementById('adBack').onclick = () => render();
+      return;
+    }
+    const t = d.totals || {};
+    const users = d.users || [];
+    const seen = (u) => {
+      if (!u.last_seen) return '<span class="muted">never opened</span>';
+      const mins = (Date.now() - new Date(u.last_seen).getTime()) / 60000;
+      return mins < 5 ? '<b class="ok">● online now</b>' : `seen ${ago(u.last_seen)}`;
+    };
+    const draw = () => {
+      const qq = (document.getElementById('adSearch') || {}).value || q || '';
+      const list = users.filter((u) => !qq || u.username.includes(qq.toLowerCase().replace(/^@/, '')));
+      document.getElementById('adList').innerHTML =
+        list
+          .map((u) => {
+            const st = u.stats || {};
+            return `<li><span class="avatar">${esc(u.username[0].toUpperCase())}</span>
+              <span class="pmeta"><b>@${esc(u.username)}${u.is_admin ? ' <span class="badge">admin</span>' : ''}</b>
+                <small>${seen(u)} · joined ${new Date(u.joined).toLocaleDateString()}</small>
+                <small>${fmt(st.packs)} packs · ${fmt(st.cards)} cards · ${money(st.value)} · 👟 ${fmt(u.steps_week)} this week · ${fmt(u.friends)} friends</small></span></li>`;
+          })
+          .join('') || '<li class="muted">No one matches.</li>';
+    };
+    r.innerHTML = `
+      <div class="card-panel">
+        <div class="panel-head"><button class="link-btn" id="adBack">‹ Friends</button><button class="link-btn" id="adRefresh">Refresh</button></div>
+        <h2>🛡 Admin dashboard</h2>
+        <div class="admin-tiles">
+          <div><b>${fmt(t.users)}</b><small>users</small></div>
+          <div><b class="ok">${fmt(t.online)}</b><small>online now</small></div>
+          <div><b>${fmt(t.active_today)}</b><small>active today</small></div>
+          <div><b>${fmt(t.active_week)}</b><small>this week</small></div>
+          <div><b>${fmt(t.new_week)}</b><small>new this week</small></div>
+          <div><b>${fmt(t.friendships)}</b><small>friendships</small></div>
+          <div><b>${fmt(t.trades)}</b><small>trades</small></div>
+          <div><b>${fmt(t.matches)}</b><small>Pack Wars</small></div>
+        </div>
+        <p class="muted small">Only admins can see this. Most recently active first.</p>
+      </div>
+      <div class="card-panel">
+        <input type="search" id="adSearch" placeholder="Search users…" value="${esc(q || '')}">
+        <ul class="people" id="adList"></ul>
+      </div>`;
+    document.getElementById('adBack').onclick = () => render();
+    document.getElementById('adRefresh').onclick = () => renderAdmin(document.getElementById('adSearch').value);
+    document.getElementById('adSearch').oninput = draw;
+    draw();
+  }
+
   // Sign the user back in quietly on startup so syncing starts right away.
-  if (configured) loadMe();
+  // When sign-in is required, show the sign-in screen until they're logged in.
+  if (configured) {
+    const hasSession = (() => {
+      try { return !!localStorage.getItem('packripped:auth'); } catch { return false; }
+    })();
+    if (gated() && !hasSession) showGate();
+    loadMe().then(() => {
+      if (gated() && !me) showGate();
+      else hideGate();
+    });
+  }
 
   window.PRSocial = {
     render, syncNow, syncFresh, rpc, configured,

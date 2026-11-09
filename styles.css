@@ -525,3 +525,14 @@ small.block { display: block; font-weight: 500; font-size: 12px; margin-top: 2px
 .chip-btn { background: var(--panel2); border: 1px solid #3b3258; border-radius: 99px; padding: 7px 12px; font-size: 14px; color: var(--text); }
 .chip-btn.on { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #1b1020; border-color: transparent; font-weight: 700; }
 .chip-input { width: 90px; padding: 7px 10px; border-radius: 99px; font-size: 14px; }
+
+/* Sign-in gate + admin */
+.auth-gate { position: fixed; inset: 0; z-index: 300; background: var(--bg); overflow-y: auto;
+  padding: calc(30px + var(--safe-top)) 16px calc(30px + var(--safe-bottom)); }
+.gate-inner { max-width: 440px; margin: 0 auto; }
+.gate-brand { font-size: 34px; text-align: center; margin: 20px 0 24px; }
+.admin-btn { margin-top: 10px; border-color: #5a4a8a; }
+.admin-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; margin: 10px 0; }
+.admin-tiles div { background: var(--panel2); border-radius: 10px; padding: 8px 2px; }
+.admin-tiles b { display: block; font-size: 20px; }
+.admin-tiles small { color: var(--muted); font-size: 11px; }

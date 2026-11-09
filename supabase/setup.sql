@@ -37,6 +37,9 @@ create table if not exists public.friendships (
   check (requester <> addressee)
 );
 
+alter table public.profiles add column if not exists is_admin boolean not null default false;
+alter table public.profiles add column if not exists last_seen timestamptz;
+
 alter table public.profiles enable row level security;
 alter table public.user_data enable row level security;
 alter table public.steps_log enable row level security;
@@ -82,7 +85,13 @@ $$;
 
 create or replace function public.my_profile() returns jsonb
 language sql stable security definer set search_path = public as $$
-  select jsonb_build_object('username', username) from profiles where id = auth.uid();
+  select jsonb_build_object('username', username, 'is_admin', is_admin) from profiles where id = auth.uid();
+$$;
+
+-- The app calls this while it's open, so the admin can see who's active.
+create or replace function public.heartbeat() returns void
+language sql security definer set search_path = public as $$
+  update profiles set last_seen = now() where id = auth.uid();
 $$;
 
 -- p_events_seen: the last trade event this phone has applied. An older copy of the
@@ -585,11 +594,60 @@ language sql stable security definer set search_path = public as $$
   where e.user_id = auth.uid() and e.id > coalesce(p_after, 0);
 $$;
 
+-- ---------- Admin ----------
+-- Make someone admin by running this in Supabase's SQL Editor (it can't be called from the app):
+--   select public.make_admin('your_username');
+create or replace function public.make_admin(p_username text) returns text
+language plpgsql security definer set search_path = public as $$
+begin
+  update profiles set is_admin = true where username = lower(trim(p_username));
+  if not found then return 'No user called ' || p_username || '. Create the account in the app first.'; end if;
+  return p_username || ' is now an admin.';
+end $$;
+
+-- Everyone on the app, for the admin dashboard. Refuses anyone who isn't an admin.
+create or replace function public.admin_overview() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare result jsonb;
+begin
+  if not exists (select 1 from profiles where id = auth.uid() and is_admin) then
+    raise exception 'Admins only.';
+  end if;
+  select jsonb_build_object(
+    'totals', jsonb_build_object(
+      'users', (select count(*) from profiles),
+      'online', (select count(*) from profiles where last_seen > now() - interval '5 minutes'),
+      'active_today', (select count(*) from profiles where last_seen > now() - interval '24 hours'),
+      'active_week', (select count(*) from profiles where last_seen > now() - interval '7 days'),
+      'new_week', (select count(*) from profiles where created_at > now() - interval '7 days'),
+      'friendships', (select count(*) from friendships where status = 'accepted'),
+      'trades', (select count(*) from trades where status = 'accepted'),
+      'matches', (select count(*) from pw_games where status = 'done')
+    ),
+    'users', coalesce((select jsonb_agg(u order by u ->> 'sort' desc) from (
+      select jsonb_build_object(
+        'username', p.username,
+        'is_admin', p.is_admin,
+        'joined', p.created_at,
+        'last_seen', p.last_seen,
+        'sort', coalesce(p.last_seen, p.created_at),
+        'stats', coalesce(d.stats, '{}'::jsonb),
+        'steps_week', coalesce((select sum(steps) from steps_log s where s.user_id = p.id and s.day > current_date - 7), 0),
+        'friends', (select count(*) from friendships f where f.status = 'accepted' and p.id in (f.requester, f.addressee))
+      ) u
+      from profiles p left join user_data d on d.user_id = p.id
+      limit 2000
+    ) x), '[]'::jsonb)
+  ) into result;
+  return result;
+end $$;
+
 -- Only signed-in users can call the API (username_available is also open to sign-up).
 revoke execute on all functions in schema public from public, anon;
 grant execute on function public.username_available(text) to anon, authenticated;
 grant execute on function
-  public.my_profile(), public.push_data(jsonb, jsonb, jsonb, bigint), public.log_steps(date, integer),
+  public.my_profile(), public.heartbeat(), public.admin_overview(),
+  public.push_data(jsonb, jsonb, jsonb, bigint), public.log_steps(date, integer),
   public.send_friend_request(text), public.respond_friend_request(text, boolean),
   public.remove_friend(text), public.friends_overview(date), public.friend_data(text),
   public.leaderboard(text, text, date),

@@ -53,11 +53,31 @@ window.PACKRIPPED_CONFIG = {
 };
 ```
 
+## 6. Make yourself the admin
+Once the app is connected, everyone has to sign in before playing.
+1. Open the app and **create your account** (pick your username).
+2. In Supabase, open **SQL Editor → New query**, type this with your username, and tap **Run**:
+
+```sql
+select public.make_admin('your_username');
+```
+
+It should say "your_username is now an admin." Reopen the app, go to the
+**Friends** tab, and tap **🛡 Admin dashboard** to see everyone on the app: who's
+online, when they joined and were last on, packs, cards, steps and friends.
+
+Admin can only be given this way, from Supabase, so nobody can make themselves
+admin from the app. To turn off required sign-in, set `requireSignIn: false` in
+`config.js`.
+
 ## What friends can see
 - **Friends** (after they accept your request): your collection, your decks,
   and your steps.
 - **Everyone signed in**: only your username and step totals, on the
   "Everyone" leaderboard.
+- **The admin** (you): every user's username, when they joined and were last
+  on, and their packs, cards, collection value, weekly steps and friend count.
+  The sign-up screen tells people this. Daily goals are never shared.
 - Nobody can change anyone else's data.
 
 ## Good to know
